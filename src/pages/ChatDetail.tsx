@@ -1,16 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Send,
   Plus,
   Paperclip,
-  Check,
   Sparkles,
   ChevronDown,
   ChevronUp,
   Download,
   ListTodo,
+  Copy,
+  CheckCheck,
+  RefreshCw,
+  Mic,
 } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { useTaskStore } from '@/store/useTaskStore';
@@ -22,7 +25,8 @@ export default function ChatDetail() {
   const { chats, sendMessage, isLoading, createChat } = useChatStore();
   const { addTask } = useTaskStore();
   const [input, setInput] = useState('');
-  const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [importToast, setImportToast] = useState<{ show: boolean; count: number }>({ show: false, count: 0 });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const chat = chats.find((c) => c.id === id);
@@ -36,7 +40,7 @@ export default function ChatDetail() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chat?.messages, isLoading]);
+  }, [chat?.messages.length, isLoading]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || !id) return;
@@ -52,28 +56,45 @@ export default function ChatDetail() {
     }
   };
 
-  const toggleTasks = (msgId: string) => {
-    setExpandedTasks((prev) => {
-      const next = new Set(prev);
-      if (next.has(msgId)) {
-        next.delete(msgId);
-      } else {
-        next.add(msgId);
-      }
-      return next;
-    });
+  const handleRegenerate = async () => {
+    if (!chat || chat.messages.length < 2) return;
+    const lastUserIndex = [...chat.messages].reverse().findIndex((m) => m.role === 'user');
+    if (lastUserIndex === -1) return;
   };
 
-  const handleImportTasks = (tasks: Task[]) => {
-    const importTask = (t: Task): Task => ({
-      ...t,
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      children: t.children?.map(importTask),
-    });
+  const handleCopy = async (msg: ChatMessage) => {
+    const text = msg.content.replace(/```json[\s\S]*?```/g, '').trim();
+    await navigator.clipboard.writeText(text);
+    setCopiedId(msg.id);
+    setTimeout(() => setCopiedId(null), 1500);
+  };
 
-    tasks.forEach((t) => {
-      addTask(importTask(t));
-    });
+  const handleImportTasks = (tasks: Task[], selectedIds: Set<number>) => {
+    const flattenTasks = (list: Task[]): Task[] => {
+      const result: Task[] = [];
+      list.forEach((t) => {
+        if (selectedIds.has(t.id)) {
+          const newTask = {
+            ...t,
+            id: Date.now() + Math.floor(Math.random() * 10000),
+            children: t.children ? flattenTasks(t.children).map((c, i) => ({
+              ...c,
+              id: Date.now() + Math.floor(Math.random() * 10000) + i + 1,
+            })) : undefined,
+          };
+          result.push(newTask);
+        } else if (t.children) {
+          result.push(...flattenTasks(t.children));
+        }
+      });
+      return result.flat();
+    };
+
+    const toImport = flattenTasks(tasks);
+    toImport.forEach((t) => addTask(t));
+
+    setImportToast({ show: true, count: toImport.length });
+    setTimeout(() => setImportToast({ show: false, count: 0 }), 2500);
   };
 
   if (!chat) return null;
@@ -103,8 +124,9 @@ export default function ChatDetail() {
             <MessageList
               messages={chat.messages}
               isLoading={isLoading}
-              expandedTasks={expandedTasks}
-              onToggleTasks={toggleTasks}
+              onCopy={handleCopy}
+              copiedId={copiedId}
+              onRegenerate={handleRegenerate}
               onImport={handleImportTasks}
               messagesEndRef={messagesEndRef}
             />
@@ -115,11 +137,16 @@ export default function ChatDetail() {
               onKeyDown={handleKeyDown}
               isLoading={isLoading}
             />
+            {importToast.show && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 rounded-xl text-sm font-medium shadow-lg backdrop-blur-xl z-50 animate-[fadeInUp_0.3s_ease]">
+                ✓ 已导入 {importToast.count} 个任务
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="sm:hidden flex-1 flex flex-col">
+      <div className="sm:hidden flex-1 flex flex-col relative">
         <ChatHeader
           title={chat.title}
           onBack={() => navigate('/chat')}
@@ -131,8 +158,9 @@ export default function ChatDetail() {
         <MessageList
           messages={chat.messages}
           isLoading={isLoading}
-          expandedTasks={expandedTasks}
-          onToggleTasks={toggleTasks}
+          onCopy={handleCopy}
+          copiedId={copiedId}
+          onRegenerate={handleRegenerate}
           onImport={handleImportTasks}
           messagesEndRef={messagesEndRef}
         />
@@ -143,6 +171,11 @@ export default function ChatDetail() {
           onKeyDown={handleKeyDown}
           isLoading={isLoading}
         />
+        {importToast.show && (
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 rounded-xl text-sm font-medium shadow-lg backdrop-blur-xl z-50 animate-[fadeInUp_0.3s_ease]">
+            ✓ 已导入 {importToast.count} 个任务
+          </div>
+        )}
       </div>
     </div>
   );
@@ -175,7 +208,7 @@ function ChatHeader({
       </span>
       <button
         onClick={onNewChat}
-        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
       >
         <Plus size={18} className="text-gray-600 dark:text-gray-300" />
       </button>
@@ -186,22 +219,24 @@ function ChatHeader({
 function MessageList({
   messages,
   isLoading,
-  expandedTasks,
-  onToggleTasks,
+  onCopy,
+  copiedId,
+  onRegenerate,
   onImport,
   messagesEndRef,
 }: {
   messages: ChatMessage[];
   isLoading: boolean;
-  expandedTasks: Set<string>;
-  onToggleTasks: (id: string) => void;
-  onImport: (tasks: Task[]) => void;
+  onCopy: (msg: ChatMessage) => void;
+  copiedId: string | null;
+  onRegenerate: () => void;
+  onImport: (tasks: Task[], selected: Set<number>) => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }) {
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4 animate-[float_3s_ease-in-out_infinite]">
           <Sparkles size={28} className="text-purple-500" />
         </div>
         <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI 任务助手</h3>
@@ -209,10 +244,11 @@ function MessageList({
           告诉我你的目标，我来帮你拆解成可执行的任务清单
         </p>
         <div className="w-full space-y-2">
-          {['我要学习一门新技能', '帮我规划一个项目', '制定健身计划'].map((q) => (
+          {['我要学习一门新技能', '帮我规划一个项目', '制定健身计划'].map((q, i) => (
             <button
               key={q}
-              className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 transition-colors"
+              className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 transition-all active:scale-[0.98]"
+              style={{ animation: `fadeInUp 0.5s ease ${i * 0.1}s both` }}
             >
               {q}
             </button>
@@ -224,25 +260,28 @@ function MessageList({
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-      {messages.map((msg) => (
+      {messages.map((msg, idx) => (
         <MessageBubble
           key={msg.id}
           message={msg}
-          expanded={expandedTasks.has(msg.id)}
-          onToggleTasks={() => onToggleTasks(msg.id)}
+          isLast={idx === messages.length - 1}
+          isCopied={copiedId === msg.id}
+          onCopy={() => onCopy(msg)}
+          onRegenerate={onRegenerate}
           onImport={onImport}
+          index={idx}
         />
       ))}
       {isLoading && (
-        <div className="flex gap-3">
+        <div className="flex gap-3 animate-[fadeIn_0.3s_ease]">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
             <Sparkles size={14} className="text-white" />
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
             <div className="flex gap-1.5">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         </div>
@@ -254,20 +293,91 @@ function MessageList({
 
 function MessageBubble({
   message,
-  expanded,
-  onToggleTasks,
+  isLast,
+  isCopied,
+  onCopy,
+  onRegenerate,
   onImport,
+  index,
 }: {
   message: ChatMessage;
-  expanded: boolean;
-  onToggleTasks: () => void;
-  onImport: (tasks: Task[]) => void;
+  isLast: boolean;
+  isCopied: boolean;
+  onCopy: () => void;
+  onRegenerate: () => void;
+  onImport: (tasks: Task[], selected: Set<number>) => void;
+  index: number;
 }) {
   const isUser = message.role === 'user';
   const hasTasks = message.suggestedTasks && message.suggestedTasks.length > 0;
+  const [showTasks, setShowTasks] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(() => {
+    const ids = new Set<number>();
+    const collectIds = (tasks: Task[]) => {
+      tasks.forEach((t) => {
+        ids.add(t.id);
+        if (t.children) collectIds(t.children);
+      });
+    };
+    if (message.suggestedTasks) collectIds(message.suggestedTasks);
+    return ids;
+  });
+
+  const renderedContent = useMemo(() => {
+    return renderMarkdown(message.content);
+  }, [message.content]);
+
+  const totalTaskCount = useMemo(() => {
+    if (!message.suggestedTasks) return 0;
+    let count = 0;
+    const countTasks = (tasks: Task[]) => {
+      tasks.forEach((t) => {
+        count++;
+        if (t.children) countTasks(t.children);
+      });
+    };
+    countTasks(message.suggestedTasks);
+    return count;
+  }, [message.suggestedTasks]);
+
+  const selectedCount = selectedTaskIds.size;
+
+  const toggleTask = (id: number) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (!message.suggestedTasks) return;
+    if (selectedCount === totalTaskCount) {
+      setSelectedTaskIds(new Set());
+    } else {
+      const ids = new Set<number>();
+      const collectIds = (tasks: Task[]) => {
+        tasks.forEach((t) => {
+          ids.add(t.id);
+          if (t.children) collectIds(t.children);
+        });
+      };
+      collectIds(message.suggestedTasks);
+      setSelectedTaskIds(ids);
+    }
+  };
 
   return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+    <div
+      className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+      style={{
+        animation: `fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.05}s both`,
+      }}
+    >
       <div
         className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
           isUser
@@ -281,42 +391,91 @@ function MessageBubble({
           <Sparkles size={14} className="text-white" />
         )}
       </div>
-      <div className={`max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
-        <div
-          className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
-            isUser
-              ? 'bg-blue-500 text-white rounded-tr-md'
-              : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-md shadow-sm'
-          }`}
-        >
-          {message.content.replace(/```json[\s\S]*?```/g, '').trim() || '查看下方任务列表'}
+      <div className={`max-w-[82%] ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className="group relative">
+          <div
+            className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+              isUser
+                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-md shadow-sm'
+                : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-md shadow-sm'
+            }`}
+            dangerouslySetInnerHTML={{ __html: renderedContent }}
+          />
+
+          {!isUser && isLast && (
+            <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={onCopy}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                {isCopied ? (
+                  <>
+                    <CheckCheck size={12} className="text-green-500" />
+                    <span className="text-green-500">已复制</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    <span>复制</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onRegenerate}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <RefreshCw size={12} />
+                <span>重新生成</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {hasTasks && (
           <div className="mt-2">
             <button
-              onClick={onToggleTasks}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors w-full ${
+              onClick={() => setShowTasks(!showTasks)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all w-full ${
                 isUser
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
                   : 'bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300'
-              }`}
+              } hover:shadow-sm active:scale-[0.98]`}
             >
               <ListTodo size={14} />
-              <span>任务清单 ({message.suggestedTasks!.length})</span>
-              {expanded ? <ChevronUp size={14} className="ml-auto" /> : <ChevronDown size={14} className="ml-auto" />}
+              <span>任务清单 ({message.suggestedTasks!.length} 组 / 共 {totalTaskCount} 项</span>
+              {showTasks ? <ChevronUp size={14} className="ml-auto" /> : <ChevronDown size={14} className="ml-auto" />}
             </button>
 
-            {expanded && (
-              <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                <TaskPreview tasks={message.suggestedTasks!} />
+            {showTasks && (
+              <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 animate-[fadeIn_0.25s_ease]">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+                  <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={selectedCount === totalTaskCount}
+                      onChange={toggleAll}
+                      className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500"
+                    />
+                    全选 ({selectedCount}/{totalTaskCount}
+                  </label>
+                </div>
+                <TaskPreview
+                  tasks={message.suggestedTasks!}
+                  selectedIds={selectedTaskIds}
+                  onToggle={toggleTask}
+                />
                 <div className="p-3 border-t border-gray-100 dark:border-gray-700">
                   <button
-                    onClick={() => onImport(message.suggestedTasks!)}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    onClick={() => onImport(message.suggestedTasks!, selectedTaskIds)}
+                    disabled={selectedCount === 0}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      selectedCount > 0
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white active:scale-[0.98]'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                    }`}
                   >
                     <Download size={16} />
-                    导入到任务列表
+                    导入 {selectedCount} 个任务
                   </button>
                 </div>
               </div>
@@ -328,7 +487,17 @@ function MessageBubble({
   );
 }
 
-function TaskPreview({ tasks, depth = 0 }: { tasks: Task[]; depth?: number }) {
+function TaskPreview({
+  tasks,
+  selectedIds,
+  onToggle,
+  depth = 0,
+}: {
+  tasks: Task[];
+  selectedIds: Set<number>;
+  onToggle: (id: number) => void;
+  depth?: number;
+}) {
   const priorityColors = {
     1: 'bg-red-500',
     2: 'bg-yellow-500',
@@ -337,28 +506,38 @@ function TaskPreview({ tasks, depth = 0 }: { tasks: Task[]; depth?: number }) {
 
   return (
     <div className="divide-y divide-gray-100 dark:divide-gray-700">
-      {tasks.map((task, idx) => (
+      {tasks.map((task) => (
         <div key={task.id}>
-          <div
-            className={`flex items-start gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-              depth > 0 ? 'pl-10' : ''
-            }`}
+          <label
+            className={`flex items-start gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+          depth > 0 ? 'pl-10' : ''
+        }`}
           >
+            <input
+              type="checkbox"
+              checked={selectedIds.has(task.id)}
+              onChange={() => onToggle(task.id)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 flex-shrink-0"
+            />
             <div className={`mt-1 w-1 h-4 rounded-full ${priorityColors[task.priority]} flex-shrink-0`} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {task.title}
               </p>
               {task.description && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   {task.description}
                 </p>
               )}
             </div>
-            <span className="text-xs text-gray-400">#{idx + 1}</span>
-          </div>
+          </label>
           {task.children && task.children.length > 0 && (
-            <TaskPreview tasks={task.children} depth={depth + 1} />
+            <TaskPreview
+              tasks={task.children}
+              selectedIds={selectedIds}
+              onToggle={onToggle}
+              depth={depth + 1}
+            />
           )}
         </div>
       ))}
@@ -379,14 +558,24 @@ function InputBar({
   onKeyDown: (e: React.KeyboardEvent) => void;
   isLoading: boolean;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 128) + 'px';
+    }
+  }, [input]);
+
   return (
     <div className="border-t border-gray-100 dark:border-gray-800 p-3 flex-shrink-0 bg-white dark:bg-gray-900">
       <div className="flex items-end gap-2">
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0">
+        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 flex-shrink-0">
           <Paperclip size={20} className="text-gray-500" />
         </button>
         <div className="flex-1 relative">
           <textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
@@ -396,18 +585,52 @@ function InputBar({
             style={{ minHeight: '42px' }}
           />
         </div>
-        <button
-          onClick={onSend}
-          disabled={!input.trim() || isLoading}
-          className={`w-10 h-10 flex items-center justify-center rounded-full transition-all flex-shrink-0 ${
-            input.trim() && !isLoading
-              ? 'bg-purple-500 hover:bg-purple-600 text-white'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-          }`}
-        >
-          <Send size={18} />
-        </button>
+        {input.trim() ? (
+          <button
+            onClick={onSend}
+            disabled={isLoading}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all active:scale-95 flex-shrink-0 shadow-md"
+          >
+            <Send size={18} />
+          </button>
+        ) : (
+          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 flex-shrink-0">
+            <Mic size={20} className="text-gray-500" />
+          </button>
+        )}
       </div>
     </div>
   );
+}
+
+function renderMarkdown(text: string): string {
+  let html = text
+    .replace(/```json[\s\S]*?```/g, '')
+    .replace(/```([\s\S]*?)```/g, (_, code) => {
+      return `<pre class="mt-2 p-3 rounded-lg bg-gray-900 dark:bg-gray-950 text-xs text-gray-300 overflow-x-auto"><code>${escapeHtml(code.trim())}</code></pre>`;
+    })
+    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-pink-500 text-xs font-mono">$1</code>');
+
+  html = html
+    .replace(/^### (.+)$/gm, '<h3 class="font-bold text-base mt-3 mb-2">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="font-bold text-lg mt-4 mb-2">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 class="font-bold text-xl mt-4 mb-2">$1</h1>');
+
+  html = html
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  html = html
+    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>');
+
+  html = html.replace(/\n/g, '<br />');
+
+  return html;
+}
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
 }
