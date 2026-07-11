@@ -15,6 +15,7 @@ interface TaskRepository {
     suspend fun updateTask(task: Task)
     suspend fun deleteTask(id: Int)
     suspend fun toggleTaskStatus(id: Int)
+    suspend fun incrementPomodoroCount(taskId: Int)
     suspend fun getProgress(taskId: Int): Float
     fun getGroupedTasks(filter: FilterType = FilterType.ALL): Flow<List<Pair<String, List<Task>>>>
 }

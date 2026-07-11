@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ fun TaskList(
     onTaskChecked: (Int) -> Unit,
     onTaskLongPress: (Task) -> Unit,
     onDeleteTask: (Int) -> Unit,
+    onStartPomodoro: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (groupedTasks.isEmpty()) {
@@ -79,7 +81,8 @@ fun TaskList(
                     onClick = { onTaskClick(task) },
                     onCheckedChange = { onTaskChecked(task.id) },
                     onLongPress = { onTaskLongPress(task) },
-                    onDelete = { onDeleteTask(task.id) }
+                    onDelete = { onDeleteTask(task.id) },
+                    onStartPomodoro = { onStartPomodoro(task) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -125,6 +128,7 @@ fun TaskItem(
     onCheckedChange: () -> Unit,
     onLongPress: () -> Unit,
     onDelete: () -> Unit,
+    onStartPomodoro: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val priorityColor = when (task.priority) {
@@ -222,6 +226,40 @@ fun TaskItem(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
+                        }
+                    }
+
+                    if (!multiSelectMode) {
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(
+                                    if (task.pomodoroCount > 0)
+                                        RedPriority.copy(alpha = 0.12f)
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                                )
+                                .clickable { onStartPomodoro() }
+                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Timer,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(11.dp),
+                                    tint = if (task.pomodoroCount > 0) RedPriority
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = if (task.pomodoroCount > 0) "${task.pomodoroCount}" else "开始",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (task.pomodoroCount > 0) RedPriority
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
 

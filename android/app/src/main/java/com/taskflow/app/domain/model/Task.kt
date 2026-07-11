@@ -38,6 +38,25 @@ enum class ThemeType {
     SYSTEM
 }
 
+enum class PomodoroPhase {
+    FOCUS,
+    SHORT_BREAK,
+    LONG_BREAK
+}
+
+data class PomodoroState(
+    val isRunning: Boolean = false,
+    val phase: PomodoroPhase = PomodoroPhase.FOCUS,
+    val timeRemaining: Long = 25 * 60 * 1000L,
+    val currentTaskId: Int? = null,
+    val currentTaskTitle: String = "",
+    val completedPomodoros: Int = 0,
+    val focusDuration: Long = 25 * 60 * 1000L,
+    val shortBreakDuration: Long = 5 * 60 * 1000L,
+    val longBreakDuration: Long = 15 * 60 * 1000L,
+    val longBreakInterval: Int = 4
+)
+
 data class Task(
     val id: Int = 0,
     val title: String,
@@ -49,6 +68,7 @@ data class Task(
     val order: Int = 0,
     val aiGenerated: Boolean = false,
     val syncStatus: SyncStatus = SyncStatus.LOCAL_ONLY,
+    val pomodoroCount: Int = 0,
     val createTime: Long = System.currentTimeMillis(),
     val updateTime: Long = System.currentTimeMillis(),
     val children: List<Task> = emptyList()

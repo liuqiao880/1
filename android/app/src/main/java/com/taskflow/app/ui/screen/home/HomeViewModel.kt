@@ -3,6 +3,8 @@ package com.taskflow.app.ui.screen.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.taskflow.app.domain.model.FilterType
+import com.taskflow.app.domain.model.PomodoroPhase
+import com.taskflow.app.domain.model.PomodoroState
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
@@ -11,10 +13,13 @@ import com.taskflow.app.domain.usecase.AddTasksUseCase
 import com.taskflow.app.domain.usecase.DeleteTaskUseCase
 import com.taskflow.app.domain.usecase.GetGroupedTasksUseCase
 import com.taskflow.app.domain.usecase.GetTaskByIdUseCase
+import com.taskflow.app.domain.usecase.IncrementPomodoroUseCase
 import com.taskflow.app.domain.usecase.SearchTasksUseCase
 import com.taskflow.app.domain.usecase.ToggleTaskUseCase
 import com.taskflow.app.domain.usecase.UpdateTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +44,8 @@ data class HomeUiState(
     val isLoading: Boolean = false,
     val undoMessage: String? = null,
     val showSettings: Boolean = false,
+    val pomodoroState: PomodoroState = PomodoroState(),
+    val showPomodoroPanel: Boolean = false,
 )
 
 @HiltViewModel
@@ -51,8 +58,11 @@ class HomeViewModel @Inject constructor(
     private val deleteTaskUseCase: DeleteTaskUseCase,
     private val searchTasksUseCase: SearchTasksUseCase,
     private val getTaskByIdUseCase: GetTaskByIdUseCase,
+    private val incrementPomodoroUseCase: IncrementPomodoroUseCase,
     private val preferencesRepository: PreferencesRepository
 ) : ViewModel() {
+
+    private var timerJob: Job? = null
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -217,5 +227,165 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesRepository.setTheme(theme)
         }
+    }
+
+    fun startPomodoro(taskId: Int, taskTitle: String) {
+        val current = _uiState.value.pomodoroState
+        _uiState.value = _uiState.value.copy(
+            showPomodoroPanel = true,
+            pomodoroState = current.copy(
+                isRunning = true,
+                currentTaskId = taskId,
+                currentTaskTitle = taskTitle,
+                phase = PomodoroPhase.FOCUS,
+                timeRemaining = current.focusDuration
+            )
+        )
+        startTimer()
+    }
+
+    fun togglePomodoro() {
+        val current = _uiState.value.pomodoroState
+        val newRunning = !current.isRunning
+        _uiState.value = _uiState.value.copy(
+            pomodoroState = current.copy(isRunning = newRunning)
+        )
+        if (newRunning) {
+            startTimer()
+        } else {
+            stopTimer()
+        }
+    }
+
+    fun resetPomodoro() {
+        stopTimer()
+        val current = _uiState.value.pomodoroState
+        val duration = when (current.phase) {
+            PomodoroPhase.FOCUS -> current.focusDuration
+            PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
+            PomodoroPhase.LONG_BREAK -> current.longBreakDuration
+        }
+        _uiState.value = _uiState.value.copy(
+            pomodoroState = current.copy(
+                isRunning = false,
+                timeRemaining = duration
+            )
+        )
+    }
+
+    fun skipPomodoro() {
+        val current = _uiState.value.pomodoroState
+        moveToNextPhase()
+    }
+
+    fun setPomodoroPhase(phase: PomodoroPhase) {
+        stopTimer()
+        val current = _uiState.value.pomodoroState
+        val duration = when (phase) {
+            PomodoroPhase.FOCUS -> current.focusDuration
+            PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
+            PomodoroPhase.LONG_BREAK -> current.longBreakDuration
+        }
+        _uiState.value = _uiState.value.copy(
+            pomodoroState = current.copy(
+                phase = phase,
+                timeRemaining = duration,
+                isRunning = false
+            )
+        )
+    }
+
+    fun setShowPomodoroPanel(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showPomodoroPanel = show)
+    }
+
+    private fun startTimer() {
+        stopTimer()
+        timerJob = viewModelScope.launch {
+            while (_uiState.value.pomodoroState.isRunning && _uiState.value.pomodoroState.timeRemaining > 0) {
+                delay(1000L)
+                val current = _uiState.value.pomodoroState
+                if (current.isRunning) {
+                    _uiState.value = _uiState.value.copy(
+                        pomodoroState = current.copy(
+                            timeRemaining = (current.timeRemaining - 1000L).coerceAtLeast(0L)
+                        )
+                    )
+                }
+            }
+            if (_uiState.value.pomodoroState.timeRemaining <= 0L && _uiState.value.pomodoroState.isRunning) {
+                onPhaseComplete()
+            }
+        }
+    }
+
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
+    }
+
+    private fun onPhaseComplete() {
+        stopTimer()
+        val current = _uiState.value.pomodoroState
+
+        viewModelScope.launch {
+            if (current.phase == PomodoroPhase.FOCUS && current.currentTaskId != null) {
+                incrementPomodoroUseCase(current.currentTaskId)
+            }
+
+            val newCompleted = if (current.phase == PomodoroPhase.FOCUS) {
+                current.completedPomodoros + 1
+            } else {
+                current.completedPomodoros
+            }
+
+            val nextPhase = when (current.phase) {
+                PomodoroPhase.FOCUS -> {
+                    if (newCompleted > 0 && newCompleted % current.longBreakInterval == 0) {
+                        PomodoroPhase.LONG_BREAK
+                    } else {
+                        PomodoroPhase.SHORT_BREAK
+                    }
+                }
+                PomodoroPhase.SHORT_BREAK, PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
+            }
+
+            val nextDuration = when (nextPhase) {
+                PomodoroPhase.FOCUS -> current.focusDuration
+                PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
+                PomodoroPhase.LONG_BREAK -> current.longBreakDuration
+            }
+
+            _uiState.value = _uiState.value.copy(
+                pomodoroState = current.copy(
+                    phase = nextPhase,
+                    timeRemaining = nextDuration,
+                    isRunning = false,
+                    completedPomodoros = newCompleted
+                )
+            )
+        }
+    }
+
+    private fun moveToNextPhase() {
+        stopTimer()
+        val current = _uiState.value.pomodoroState
+        val nextPhase = when (current.phase) {
+            PomodoroPhase.FOCUS -> PomodoroPhase.SHORT_BREAK
+            PomodoroPhase.SHORT_BREAK -> PomodoroPhase.FOCUS
+            PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
+        }
+        val nextDuration = when (nextPhase) {
+            PomodoroPhase.FOCUS -> current.focusDuration
+            PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
+            PomodoroPhase.LONG_BREAK -> current.longBreakDuration
+        }
+        _uiState.value = _uiState.value.copy(
+            pomodoroState = current.copy(
+                phase = nextPhase,
+                timeRemaining = nextDuration,
+                isRunning = false
+            )
+        )
     }
 }

@@ -77,6 +77,10 @@ class TaskRepositoryImpl @Inject constructor(
         taskDao.updateTaskStatus(id, newStatus)
     }
 
+    override suspend fun incrementPomodoroCount(taskId: Int) {
+        taskDao.incrementPomodoroCount(taskId)
+    }
+
     override suspend fun getProgress(taskId: Int): Float {
         val total = taskDao.getTotalChildrenCount(taskId)
         if (total == 0) return 0f

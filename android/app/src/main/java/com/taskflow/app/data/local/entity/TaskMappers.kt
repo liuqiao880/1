@@ -17,6 +17,7 @@ fun TaskEntity.toDomain(children: List<Task> = emptyList()): Task {
         order = order,
         aiGenerated = aiGenerated,
         syncStatus = SyncStatus.valueOf(syncStatus),
+        pomodoroCount = pomodoroCount,
         createTime = createTime,
         updateTime = updateTime,
         children = children
@@ -35,6 +36,7 @@ fun Task.toEntity(): TaskEntity {
         order = order,
         aiGenerated = aiGenerated,
         syncStatus = syncStatus.name,
+        pomodoroCount = pomodoroCount,
         createTime = createTime,
         updateTime = updateTime
     )

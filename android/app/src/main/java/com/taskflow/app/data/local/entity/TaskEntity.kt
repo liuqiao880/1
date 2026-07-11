@@ -18,6 +18,7 @@ data class TaskEntity(
     val order: Int = 0,
     val aiGenerated: Boolean = false,
     val syncStatus: String = SyncStatus.LOCAL_ONLY.name,
+    val pomodoroCount: Int = 0,
     val createTime: Long = System.currentTimeMillis(),
     val updateTime: Long = System.currentTimeMillis(),
     val extra1: String? = null,

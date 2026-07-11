@@ -65,6 +65,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET status = :status WHERE id = :id")
     suspend fun updateTaskStatus(id: Int, status: String)
 
+    @Query("UPDATE tasks SET pomodoroCount = pomodoroCount + 1 WHERE id = :id")
+    suspend fun incrementPomodoroCount(id: Int)
+
     @Query("SELECT COUNT(*) FROM tasks WHERE parentId = :parentId AND status = 'COMPLETED'")
     suspend fun getCompletedChildrenCount(parentId: Int): Int
 

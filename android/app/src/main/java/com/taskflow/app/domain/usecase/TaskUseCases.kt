@@ -62,3 +62,11 @@ class SearchTasksUseCase @Inject constructor(
 ) {
     operator fun invoke(query: String) = repository.searchTasks(query)
 }
+
+class IncrementPomodoroUseCase @Inject constructor(
+    private val repository: TaskRepository
+) {
+    suspend operator fun invoke(taskId: Int) {
+        repository.incrementPomodoroCount(taskId)
+    }
+}
