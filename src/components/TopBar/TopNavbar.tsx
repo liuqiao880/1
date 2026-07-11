@@ -1,8 +1,18 @@
-import { Search, Moon, Sun, Settings } from 'lucide-react';
+import { Search, Moon, Sun, Settings, MoreVertical } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 
 export default function TopNavbar() {
-  const { theme, toggleTheme, setShowSearch, showSearch, searchQuery, setSearchQuery } = useTaskStore();
+  const {
+    theme,
+    toggleTheme,
+    setShowSearch,
+    showSearch,
+    searchQuery,
+    setSearchQuery,
+    setShowSettings,
+    multiSelectMode,
+    toggleMultiSelect,
+  } = useTaskStore();
 
   return (
     <div className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
@@ -30,7 +40,10 @@ export default function TopNavbar() {
               >
                 {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
               </button>
-              <button className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95">
+              <button
+                onClick={() => setShowSettings(true)}
+                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+              >
                 <Settings size={20} />
               </button>
             </div>

@@ -11,6 +11,12 @@ interface AppState {
   searchQuery: string;
   showAiModal: boolean;
   showSearch: boolean;
+  showSettings: boolean;
+  showEditModal: boolean;
+  editingTask: Task | null;
+  selectedTasks: number[];
+  multiSelectMode: boolean;
+  undoBuffer: { tasks: Task[]; message: string } | null;
 
   toggleTask: (id: number) => void;
   toggleExpand: (id: number) => void;
@@ -19,20 +25,40 @@ interface AppState {
   setSearchQuery: (q: string) => void;
   setShowAiModal: (show: boolean) => void;
   setShowSearch: (show: boolean) => void;
+  setShowSettings: (show: boolean) => void;
+  openEditModal: (task: Task) => void;
+  closeEditModal: () => void;
+  updateTask: (task: Task) => void;
   addTask: (task: Task) => void;
   deleteTask: (id: number) => void;
+  toggleMultiSelect: () => void;
+  toggleSelected: (id: number) => void;
+  clearSelection: () => void;
+  deleteSelected: () => void;
+  undo: () => void;
 }
 
-function toggleTaskInTree(tasks: Task[], id: number): Task[] {
+function mapTaskInTree(tasks: Task[], id: number, updater: (t: Task) => Task): Task[] {
   return tasks.map((t) => {
     if (t.id === id) {
-      return { ...t, status: t.status === 'completed' ? 'todo' : 'completed' };
+      return updater(t);
     }
     if (t.children && t.children.length > 0) {
-      return { ...t, children: toggleTaskInTree(t.children, id) };
+      return { ...t, children: mapTaskInTree(t.children, id, updater) };
     }
     return t;
   });
+}
+
+function toggleTaskInTree(tasks: Task[], id: number): Task[] {
+  return mapTaskInTree(tasks, id, (t) => ({
+    ...t,
+    status: t.status === 'completed' ? 'todo' : 'completed',
+  }));
+}
+
+function deepCloneTasks(tasks: Task[]): Task[] {
+  return JSON.parse(JSON.stringify(tasks));
 }
 
 export const useTaskStore = create<AppState>()(
@@ -45,6 +71,12 @@ export const useTaskStore = create<AppState>()(
       searchQuery: '',
       showAiModal: false,
       showSearch: false,
+      showSettings: false,
+      showEditModal: false,
+      editingTask: null,
+      selectedTasks: [],
+      multiSelectMode: false,
+      undoBuffer: null,
 
       toggleTask: (id: number) => {
         set({ tasks: toggleTaskInTree(get().tasks, id) });
@@ -80,20 +112,101 @@ export const useTaskStore = create<AppState>()(
 
       setShowSearch: (show: boolean) => set({ showSearch: show }),
 
+      setShowSettings: (show: boolean) => set({ showSettings: show }),
+
+      openEditModal: (task: Task) => {
+        set({ editingTask: task, showEditModal: true });
+      },
+
+      closeEditModal: () => {
+        set({ showEditModal: false, editingTask: null });
+      },
+
+      updateTask: (updated: Task) => {
+        set({
+          tasks: mapTaskInTree(get().tasks, updated.id, () => ({
+            ...updated,
+            updateTime: Date.now(),
+          })),
+        });
+      },
+
       addTask: (task: Task) => {
         set({ tasks: [task, ...get().tasks] });
       },
 
       deleteTask: (id: number) => {
+        const currentTasks = deepCloneTasks(get().tasks);
         const filterFn = (items: Task[]): Task[] =>
           items
             .filter((t) => t.id !== id)
             .map((t) => (t.children ? { ...t, children: filterFn(t.children) } : t));
-        set({ tasks: filterFn(get().tasks) });
+        const newTasks = filterFn(currentTasks);
+        set({
+          tasks: newTasks,
+          undoBuffer: { tasks: currentTasks, message: '任务已删除' },
+        });
+
+        setTimeout(() => {
+          set({ undoBuffer: null });
+        }, 3000);
+      },
+
+      toggleMultiSelect: () => {
+        const { multiSelectMode } = get();
+        set({
+          multiSelectMode: !multiSelectMode,
+          selectedTasks: multiSelectMode ? [] : get().selectedTasks,
+        });
+      },
+
+      toggleSelected: (id: number) => {
+        const { selectedTasks } = get();
+        if (selectedTasks.includes(id)) {
+          set({ selectedTasks: selectedTasks.filter((x) => x !== id) });
+        } else {
+          set({ selectedTasks: [...selectedTasks, id] });
+        }
+      },
+
+      clearSelection: () => {
+        set({ selectedTasks: [], multiSelectMode: false });
+      },
+
+      deleteSelected: () => {
+        const { selectedTasks, tasks } = get();
+        const currentTasks = deepCloneTasks(tasks);
+        const filterFn = (items: Task[]): Task[] =>
+          items
+            .filter((t) => !selectedTasks.includes(t.id))
+            .map((t) => (t.children ? { ...t, children: filterFn(t.children) } : t));
+        set({
+          tasks: filterFn(currentTasks),
+          selectedTasks: [],
+          multiSelectMode: false,
+          undoBuffer: { tasks: currentTasks, message: `已删除 ${selectedTasks.length} 个任务` },
+        });
+
+        setTimeout(() => {
+          set({ undoBuffer: null });
+        }, 3000);
+      },
+
+      undo: () => {
+        const { undoBuffer } = get();
+        if (undoBuffer) {
+          set({ tasks: undoBuffer.tasks, undoBuffer: null });
+        }
       },
     }),
     {
       name: 'taskflow-storage',
+      partialize: (state) => ({
+        tasks: state.tasks,
+        theme: state.theme,
+        expandedParents: state.expandedParents,
+        filter: state.filter,
+      }),
     }
   )
 );
