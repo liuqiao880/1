@@ -36,6 +36,7 @@ interface AppState {
   clearSelection: () => void;
   deleteSelected: () => void;
   undo: () => void;
+  incrementPomodoro: (taskId: number) => void;
 }
 
 function mapTaskInTree(tasks: Task[], id: number, updater: (t: Task) => Task): Task[] {
@@ -197,6 +198,15 @@ export const useTaskStore = create<AppState>()(
         if (undoBuffer) {
           set({ tasks: undoBuffer.tasks, undoBuffer: null });
         }
+      },
+
+      incrementPomodoro: (taskId: number) => {
+        set({
+          tasks: mapTaskInTree(get().tasks, taskId, (t) => ({
+            ...t,
+            pomodoroCount: (t.pomodoroCount || 0) + 1,
+          })),
+        });
       },
     }),
     {

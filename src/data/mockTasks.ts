@@ -5,7 +5,7 @@ today.setHours(0, 0, 0, 0);
 const todayTs = today.getTime();
 const dayMs = 24 * 60 * 60 * 1000;
 
-export const mockTasks: Task[] = [
+const rawTasks: any[] = [
   {
     id: 1,
     title: '完成产品需求文档',
@@ -205,3 +205,18 @@ export const mockTasks: Task[] = [
     createTime: todayTs,
   },
 ];
+
+function addPomodoroDefaults(tasks: any[]): Task[] {
+  return tasks.map((t) => {
+    const withPomodoro: Task = {
+      ...t,
+      pomodoroCount: t.status === 'completed' ? Math.floor(Math.random() * 3) + 1 : 0,
+    };
+    if (t.children) {
+      withPomodoro.children = addPomodoroDefaults(t.children);
+    }
+    return withPomodoro;
+  });
+}
+
+export const mockTasks: Task[] = addPomodoroDefaults(rawTasks);

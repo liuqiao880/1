@@ -7,6 +7,7 @@ import FloatingActionButton from '@/components/FAB/FloatingActionButton';
 import AiPlanModal from '@/components/Modal/AiPlanModal';
 import TaskEditModal from '@/components/Modal/TaskEditModal';
 import SettingsModal from '@/components/Modal/SettingsModal';
+import PomodoroPanel from '@/components/Pomodoro/PomodoroPanel';
 import { useTaskStore } from '@/store/useTaskStore';
 
 export default function Home() {
@@ -37,6 +38,7 @@ export default function Home() {
       <AiPlanModal />
       <TaskEditModalWrapper />
       <SettingsModal />
+      <PomodoroPanel />
 
       {/* 多选模式顶部工具栏 */}
       {multiSelectMode && (

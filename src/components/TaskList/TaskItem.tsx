@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Check, ChevronDown, Sparkles, Calendar, Flag, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Sparkles, Calendar, Flag, Trash2, Timer } from 'lucide-react';
 import { Task } from '@/types/task';
 import { useTaskStore } from '@/store/useTaskStore';
+import { usePomodoroStore } from '@/store/usePomodoroStore';
 import { formatDate, calcProgress } from '@/utils/dateUtils';
 import ProgressBar from './ProgressBar';
 
@@ -38,6 +39,8 @@ export default function TaskItem({ task }: TaskItemProps) {
     openEditModal,
     deleteTask,
   } = useTaskStore();
+
+  const { startPomodoro } = usePomodoroStore();
 
   const hasChildren = task.children && task.children.length > 0;
   const isExpanded = expandedParents.includes(task.id);
@@ -283,6 +286,24 @@ export default function TaskItem({ task }: TaskItemProps) {
                           {progress.percent}%
                         </span>
                       </div>
+                    )}
+                    {(task.pomodoroCount > 0 || !multiSelectMode) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!multiSelectMode) {
+                            startPomodoro(task.id, task.title);
+                          }
+                        }}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                          task.pomodoroCount > 0
+                            ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30'
+                        } ${multiSelectMode ? 'pointer-events-none opacity-60' : ''}`}
+                      >
+                        <Timer size={10} />
+                        <span>{task.pomodoroCount || '开始'}</span>
+                      </button>
                     )}
                   </div>
                 </div>

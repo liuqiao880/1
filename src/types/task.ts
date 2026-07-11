@@ -14,6 +14,7 @@ export interface Task {
   order: number;
   aiGenerated: boolean;
   createTime: number;
+  pomodoroCount: number;
   children?: Task[];
 }
 
