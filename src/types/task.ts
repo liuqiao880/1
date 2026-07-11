@@ -23,3 +23,29 @@ export interface TaskGroup {
   label: string;
   tasks: Task[];
 }
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  timestamp: number;
+  suggestedTasks?: Task[];
+}
+
+export interface Chat {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createTime: number;
+  updateTime: number;
+}
+
+export interface AiConfig {
+  provider: string;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  systemPrompt: string;
+}

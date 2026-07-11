@@ -1,5 +1,6 @@
-import { Search, Moon, Sun, Settings, MoreVertical } from 'lucide-react';
+import { Search, Moon, Sun, Settings, MoreVertical, Sparkles } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useNavigate } from 'react-router-dom';
 
 export default function TopNavbar() {
   const {
@@ -13,6 +14,7 @@ export default function TopNavbar() {
     multiSelectMode,
     toggleMultiSelect,
   } = useTaskStore();
+  const navigate = useNavigate();
 
   return (
     <div className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
@@ -28,6 +30,12 @@ export default function TopNavbar() {
               </h1>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigate('/chat')}
+                className="w-11 h-11 flex items-center justify-center rounded-full text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all active:scale-95"
+              >
+                <Sparkles size={20} />
+              </button>
               <button
                 onClick={() => setShowSearch(true)}
                 className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
