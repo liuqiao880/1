@@ -72,6 +72,18 @@ object DateUtils {
         }
     }
 
+    fun formatChatTime(timestamp: Long): String {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timestamp
+        val now = Calendar.getInstance()
+        val sameDay = isToday(timestamp)
+        return if (sameDay) {
+            String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE))
+        } else {
+            "${calendar.get(Calendar.MONTH) + 1}/${calendar.get(Calendar.DAY_OF_MONTH)}"
+        }
+    }
+
     fun groupTasksByDate(tasks: List<com.taskflow.app.domain.model.Task>): List<Pair<String, List<com.taskflow.app.domain.model.Task>>> {
         val today = mutableListOf<com.taskflow.app.domain.model.Task>()
         val tomorrow = mutableListOf<com.taskflow.app.domain.model.Task>()

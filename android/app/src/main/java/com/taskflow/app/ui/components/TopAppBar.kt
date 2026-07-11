@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Sparkles
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,7 @@ fun TopAppBar(
     onSearchQueryChange: (String) -> Unit,
     onSearchActiveChange: (Boolean) -> Unit,
     onSettingsClick: () -> Unit,
+    onChatClick: () -> Unit,
     multiSelectMode: Boolean,
     selectedCount: Int,
     onCloseMultiSelect: () -> Unit,
@@ -82,6 +84,9 @@ fun TopAppBar(
                 }
             },
             actions = {
+                IconButton(onClick = onChatClick) {
+                    Icon(Icons.Default.Sparkles, contentDescription = "AI 对话", tint = Color(0xFFA855F7))
+                }
                 IconButton(onClick = { onSearchActiveChange(true) }) {
                     Icon(Icons.Default.Search, contentDescription = "搜索")
                 }

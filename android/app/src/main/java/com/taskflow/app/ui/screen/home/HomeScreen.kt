@@ -23,7 +23,10 @@ import com.taskflow.app.ui.components.TopAppBar
 import com.taskflow.app.ui.components.UndoSnackbar
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
+fun HomeScreen(
+    onNavigateToChatList: () -> Unit = {},
+    viewModel: HomeViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -31,16 +34,17 @@ fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
-                    isSearchActive = uiState.isSearchActive,
-                    searchQuery = uiState.searchQuery,
-                    onSearchQueryChange = { viewModel.setSearchQuery(it) },
-                    onSearchActiveChange = { viewModel.setSearchActive(it) },
-                    onSettingsClick = { viewModel.setShowSettings(true) },
-                    multiSelectMode = uiState.multiSelectMode,
-                    selectedCount = uiState.selectedTasks.size,
-                    onCloseMultiSelect = { viewModel.toggleMultiSelect() },
-                    onDeleteSelected = { viewModel.deleteSelected() }
-                )
+                isSearchActive = uiState.isSearchActive,
+                searchQuery = uiState.searchQuery,
+                onSearchQueryChange = { viewModel.setSearchQuery(it) },
+                onSearchActiveChange = { viewModel.setSearchActive(it) },
+                onSettingsClick = { viewModel.setShowSettings(true) },
+                onChatClick = onNavigateToChatList,
+                multiSelectMode = uiState.multiSelectMode,
+                selectedCount = uiState.selectedTasks.size,
+                onCloseMultiSelect = { viewModel.toggleMultiSelect() },
+                onDeleteSelected = { viewModel.deleteSelected() }
+            )
             },
             floatingActionButton = {
                 if (!uiState.multiSelectMode) {

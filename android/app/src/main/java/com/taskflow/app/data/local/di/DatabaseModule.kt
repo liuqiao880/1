@@ -3,6 +3,7 @@ package com.taskflow.app.data.local.di
 import android.content.Context
 import androidx.room.Room
 import com.taskflow.app.data.local.TaskDatabase
+import com.taskflow.app.data.local.dao.ChatDao
 import com.taskflow.app.data.local.dao.TaskDao
 import dagger.Module
 import dagger.Provides
@@ -30,5 +31,10 @@ object DatabaseModule {
     @Provides
     fun provideTaskDao(database: TaskDatabase): TaskDao {
         return database.taskDao()
+    }
+
+    @Provides
+    fun provideChatDao(database: TaskDatabase): ChatDao {
+        return database.chatDao()
     }
 }
