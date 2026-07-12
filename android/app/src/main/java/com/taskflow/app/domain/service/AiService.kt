@@ -53,12 +53,31 @@ class AiService {
 - dueDaysFromNow 表示从今天起的天数偏移
 - 支持嵌套子任务，最多 2 层"""
 
+    private fun normalizeBaseUrl(url: String): String {
+        var normalized = url.trim().replace(Regex("/+$"), "")
+        if (normalized.endsWith("/chat/completions")) {
+            normalized = normalized.removeSuffix("/chat/completions")
+        }
+        if (normalized.isNotEmpty() && !normalized.matches(Regex("^https?://.*"))) {
+            normalized = "https://$normalized"
+        }
+        return normalized
+    }
+
     suspend fun chat(
         messages: List<Pair<String, String>>,
         config: AiConfigData
     ): String = withContext(Dispatchers.IO) {
         if (config.apiKey.isBlank()) {
             return@withContext "演示模式：未配置 API Key，以下为模拟数据。\n\n${mockResponse(messages)}"
+        }
+
+        val baseUrl = normalizeBaseUrl(config.baseUrl)
+        if (baseUrl.isBlank()) {
+            throw Exception("请先配置 Base URL")
+        }
+        if (config.model.isBlank()) {
+            throw Exception("请先配置 Model 名称")
         }
 
         val systemMsg = mapOf("role" to "system", "content" to (config.systemPrompt.ifBlank { defaultSystemPrompt }))
@@ -75,7 +94,7 @@ class AiService {
 
         val jsonBody = gson.toJson(requestBody)
         val request = Request.Builder()
-            .url("${config.baseUrl.trimEnd('/')}/chat/completions")
+            .url("$baseUrl/chat/completions")
             .addHeader("Authorization", "Bearer ${config.apiKey}")
             .addHeader("Content-Type", "application/json")
             .post(jsonBody.toRequestBody("application/json".toMediaType()))
@@ -338,8 +357,21 @@ class AiService {
     companion object {
         const val DEFAULT_BASE_URL = "https://api.openai.com/v1"
         const val DEFAULT_MODEL = "gpt-4o-mini"
+
+        val PROVIDER_PRESETS = mapOf(
+            "openai" to ProviderPreset("OpenAI 兼容", "https://api.openai.com/v1", "gpt-4o-mini"),
+            "gemini" to ProviderPreset("Google Gemini", "https://generativelanguage.googleapis.com/v1beta", "gemini-2.0-flash"),
+            "anthropic" to ProviderPreset("Anthropic Claude", "https://api.anthropic.com/v1", "claude-3-5-sonnet-20241022"),
+            "ollama" to ProviderPreset("Ollama (本地)", "http://localhost:11434/v1", "llama3.2")
+        )
     }
 }
+
+data class ProviderPreset(
+    val label: String,
+    val baseUrl: String,
+    val model: String
+)
 
 data class AiConfigData(
     val provider: String = "openai",

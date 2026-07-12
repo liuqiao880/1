@@ -494,6 +494,7 @@ fun ChatInputBar(
     val context = LocalContext.current
     var isListening by remember { mutableStateOf(false) }
     var showAttachMenu by remember { mutableStateOf(false) }
+    var voiceInputStart by remember { mutableStateOf("") }
 
     val speechRecognizer = remember {
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -520,7 +521,10 @@ fun ChatInputBar(
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
                 val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
-                if (text.isNotBlank()) onValueChange(text)
+                if (text.isNotBlank()) {
+                    val prefix = if (voiceInputStart.isNotBlank()) "$voiceInputStart " else ""
+                    onValueChange(prefix + text)
+                }
                 isListening = false
             }
             override fun onError(error: Int) { isListening = false }
@@ -531,7 +535,10 @@ fun ChatInputBar(
             override fun onEndOfSpeech() { isListening = false }
             override fun onPartialResults(partialResults: Bundle?) {
                 val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                if (!text.isNullOrBlank()) onValueChange(text)
+                if (!text.isNullOrBlank()) {
+                    val prefix = if (voiceInputStart.isNotBlank()) "$voiceInputStart " else ""
+                    onValueChange(prefix + text)
+                }
             }
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
@@ -635,6 +642,7 @@ fun ChatInputBar(
                                 isListening = false
                             } else {
                                 try {
+                                    voiceInputStart = value
                                     speechRecognizer.startListening(speechIntent)
                                     isListening = true
                                 } catch (e: Exception) {

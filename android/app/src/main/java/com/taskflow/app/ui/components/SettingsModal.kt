@@ -23,7 +23,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
+import com.taskflow.app.domain.service.AiService
+import com.taskflow.app.domain.service.ProviderPreset
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -259,6 +264,7 @@ fun ColorPickerDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ApiConfigForm(
     provider: String,
@@ -273,6 +279,9 @@ fun ApiConfigForm(
     onCancel: () -> Unit
 ) {
     var showApiKey by remember { mutableStateOf(false) }
+    var providerExpanded by remember { mutableStateOf(false) }
+    val presets = AiService.PROVIDER_PRESETS
+    val currentPreset = presets[provider]
 
     Column {
         Text(
@@ -281,12 +290,36 @@ fun ApiConfigForm(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        OutlinedTextField(
-            value = provider,
-            onValueChange = onProviderChange,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
+        ExposedDropdownMenuBox(
+            expanded = providerExpanded,
+            onExpandedChange = { providerExpanded = !providerExpanded }
+        ) {
+            OutlinedTextField(
+                value = currentPreset?.label ?: provider,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
+                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                singleLine = true,
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+            )
+            ExposedDropdownMenu(
+                expanded = providerExpanded,
+                onDismissRequest = { providerExpanded = false }
+            ) {
+                presets.forEach { (key, preset) ->
+                    DropdownMenuItem(
+                        text = { Text(preset.label) },
+                        onClick = {
+                            onProviderChange(key)
+                            onBaseUrlChange(preset.baseUrl)
+                            onModelChange(preset.model)
+                            providerExpanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
