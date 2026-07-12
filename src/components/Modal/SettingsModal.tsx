@@ -1,8 +1,9 @@
-import { X, Moon, Sun, Bell, Palette, Key, Info, Shield, Check } from 'lucide-react';
+import { X, Moon, Sun, Bell, Palette, Key, Info, Shield, Check, Wifi } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useChatStore } from '@/store/useChatStore';
 import { useState, useRef } from 'react';
 import { AccentColor, AiConfig } from '@/types/task';
+import { aiService } from '@/services/aiService';
 
 const accentColors: { key: AccentColor; label: string; value: string }[] = [
   { key: 'red', label: '报纸红', value: '#C41E3A' },
@@ -24,13 +25,43 @@ export default function SettingsModal() {
   } = useTaskStore();
   const { aiConfig, updateAiConfig } = useChatStore();
   const [savedTip, setSavedTip] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const tipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleAiConfigChange = (field: keyof AiConfig, value: string) => {
     updateAiConfig({ [field]: value } as Partial<AiConfig>);
     setSavedTip(true);
+    setTestResult(null);
     clearTimeout(tipTimer.current);
     tipTimer.current = setTimeout(() => setSavedTip(false), 1500);
+  };
+
+  const handleTestConnection = async () => {
+    if (!aiConfig.apiKey) {
+      setTestResult({ success: false, message: '请先填写 API Key' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await aiService.chat(
+        [{ role: 'user', content: 'Hi' }],
+        { ...aiConfig, systemPrompt: 'You are a helpful assistant.' }
+      );
+      if (result.includes('演示模式')) {
+        setTestResult({ success: false, message: 'API Key 为空，正在使用演示模式' });
+      } else {
+        setTestResult({ success: true, message: '连接成功！API 配置正常' });
+      }
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : '连接失败',
+      });
+    } finally {
+      setTesting(false);
+    }
   };
 
   if (!showSettings) return null;
@@ -176,6 +207,7 @@ export default function SettingsModal() {
                       type="text"
                       value={aiConfig.baseUrl}
                       onChange={(e) => handleAiConfigChange('baseUrl', e.target.value)}
+                      placeholder="https://api.openai.com/v1"
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     />
                   </div>
@@ -201,9 +233,34 @@ export default function SettingsModal() {
                       type="text"
                       value={aiConfig.model}
                       onChange={(e) => handleAiConfigChange('model', e.target.value)}
+                      placeholder="gpt-4o-mini"
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     />
                   </div>
+
+                  <button
+                    onClick={handleTestConnection}
+                    disabled={testing || !aiConfig.apiKey}
+                    className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium transition-all ${
+                      testing || !aiConfig.apiKey
+                        ? 'bg-line-separator dark:bg-gray-700 text-ink-light cursor-not-allowed'
+                        : 'bg-ink-black hover:bg-newspaper-red text-paper-white active:scale-[0.99]'
+                    }`}
+                  >
+                    <Wifi size={14} className={testing ? 'animate-pulse' : ''} />
+                    {testing ? '正在测试...' : '测试连接'}
+                  </button>
+
+                  {testResult && (
+                    <div className={`flex items-center gap-2 p-2.5 border text-xs font-sans ${
+                      testResult.success
+                        ? 'border-green-500/30 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                        : 'border-newspaper-red/30 bg-newspaper-red/5 text-newspaper-red dark:text-newspaper-red-light'
+                    }`}>
+                      {testResult.success ? <Check size={14} /> : <Shield size={14} />}
+                      <span className="flex-1">{testResult.message}</span>
+                    </div>
+                  )}
                 </div>
 
                 {savedTip && (

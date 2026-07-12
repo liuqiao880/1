@@ -42,11 +42,29 @@ export const aiService = {
     messages: { role: string; content: string }[],
     config: { apiKey: string; baseUrl: string; model: string; systemPrompt?: string }
   ): Promise<string> {
-    const { apiKey, baseUrl, model, systemPrompt = DEFAULT_SYSTEM_PROMPT } = config;
+    let { apiKey, baseUrl, model, systemPrompt = DEFAULT_SYSTEM_PROMPT } = config;
+
+    // 规范化 Base URL：去除末尾斜杠和 /chat/completions 后缀
+    baseUrl = baseUrl.trim().replace(/\/+$/, '');
+    if (baseUrl.endsWith('/chat/completions')) {
+      baseUrl = baseUrl.slice(0, -'/chat/completions'.length);
+    }
+    // 如果没有 http 前缀，自动加上 https
+    if (baseUrl && !/^https?:\/\//.test(baseUrl)) {
+      baseUrl = 'https://' + baseUrl;
+    }
 
     if (!apiKey) {
       const mock = this.mockResponse(messages);
       return `> ⚠️ **演示模式**：未配置 API Key，以下为模拟数据。请在设置中配置 AI API 以使用真实规划。\n\n${mock}`;
+    }
+
+    if (!baseUrl) {
+      throw new Error('请先配置 Base URL');
+    }
+
+    if (!model) {
+      throw new Error('请先配置 Model 名称');
     }
 
     const controller = new AbortController();

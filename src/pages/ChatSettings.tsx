@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Key, Bot, Save, RotateCcw, Sparkles, Check } from 'lucide-react';
+import { ArrowLeft, Key, Bot, Save, RotateCcw, Sparkles, Check, Wifi } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { aiService } from '@/services/aiService';
 
@@ -9,6 +9,8 @@ export default function ChatSettings() {
   const { aiConfig, updateAiConfig } = useChatStore();
   const [localConfig, setLocalConfig] = useState(aiConfig);
   const [savedTip, setSavedTip] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const handleSave = () => {
     updateAiConfig(localConfig);
@@ -18,6 +20,33 @@ export default function ChatSettings() {
 
   const handleResetPrompt = () => {
     setLocalConfig({ ...localConfig, systemPrompt: aiService.defaultSystemPrompt });
+  };
+
+  const handleTestConnection = async () => {
+    if (!localConfig.apiKey) {
+      setTestResult({ success: false, message: '请先填写 API Key' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await aiService.chat(
+        [{ role: 'user', content: 'Hi' }],
+        { ...localConfig, systemPrompt: 'You are a helpful assistant.' }
+      );
+      if (result.includes('演示模式')) {
+        setTestResult({ success: false, message: 'API Key 为空，正在使用演示模式' });
+      } else {
+        setTestResult({ success: true, message: '连接成功！API 配置正常' });
+      }
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : '连接失败',
+      });
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -41,6 +70,9 @@ export default function ChatSettings() {
               onResetPrompt={handleResetPrompt}
               onBack={() => navigate('/chat')}
               savedTip={savedTip}
+              testing={testing}
+              testResult={testResult}
+              onTestConnection={handleTestConnection}
             />
           </div>
         </div>
@@ -54,6 +86,9 @@ export default function ChatSettings() {
           onResetPrompt={handleResetPrompt}
           onBack={() => navigate('/chat')}
           savedTip={savedTip}
+          testing={testing}
+          testResult={testResult}
+          onTestConnection={handleTestConnection}
         />
       </div>
     </div>
@@ -67,6 +102,9 @@ function SettingsContent({
   onResetPrompt,
   onBack,
   savedTip,
+  testing,
+  testResult,
+  onTestConnection,
 }: {
   config: any;
   setConfig: (c: any) => void;
@@ -74,6 +112,9 @@ function SettingsContent({
   onResetPrompt: () => void;
   onBack: () => void;
   savedTip: boolean;
+  testing: boolean;
+  testResult: { success: boolean; message: string } | null;
+  onTestConnection: () => void;
 }) {
   return (
     <>
@@ -157,6 +198,30 @@ function SettingsContent({
                 className="w-full px-3 py-2.5 bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
               />
             </div>
+
+            <button
+              onClick={onTestConnection}
+              disabled={testing || !config.apiKey}
+              className={`w-full flex items-center justify-center gap-2 py-2.5 text-xs font-medium transition-all ${
+                testing || !config.apiKey
+                  ? 'bg-line-separator dark:bg-gray-700 text-ink-light cursor-not-allowed'
+                  : 'bg-ink-black hover:bg-newspaper-red text-paper-white active:scale-[0.99]'
+              }`}
+            >
+              <Wifi size={14} className={testing ? 'animate-pulse' : ''} />
+              {testing ? '正在测试...' : '测试连接'}
+            </button>
+
+            {testResult && (
+              <div className={`flex items-center gap-2 p-2.5 border text-xs font-sans ${
+                testResult.success
+                  ? 'border-green-500/30 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                  : 'border-newspaper-red/30 bg-newspaper-red/5 text-newspaper-red dark:text-newspaper-red-light'
+              }`}>
+                {testResult.success ? <Check size={14} /> : <Key size={14} />}
+                <span className="flex-1">{testResult.message}</span>
+              </div>
+            )}
           </div>
         </div>
 
