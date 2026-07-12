@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Key, Bot, Save, RotateCcw, Sparkles, Check, Wifi } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
@@ -12,6 +12,37 @@ export default function ChatSettings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const isDirty = useMemo(() => {
+    return (
+      localConfig.provider !== aiConfig.provider ||
+      localConfig.baseUrl !== aiConfig.baseUrl ||
+      localConfig.apiKey !== aiConfig.apiKey ||
+      localConfig.model !== aiConfig.model ||
+      localConfig.systemPrompt !== aiConfig.systemPrompt
+    );
+  }, [localConfig, aiConfig]);
+
+  const handleBack = () => {
+    if (isDirty) {
+      if (confirm('有未保存的修改，确定要离开吗？')) {
+        navigate('/chat');
+      }
+    } else {
+      navigate('/chat');
+    }
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
   const handleSave = () => {
     updateAiConfig(localConfig);
     setSavedTip(true);
@@ -19,7 +50,23 @@ export default function ChatSettings() {
   };
 
   const handleResetPrompt = () => {
-    setLocalConfig({ ...localConfig, systemPrompt: aiService.defaultSystemPrompt });
+    if (confirm('确定要重置系统提示词为默认值吗？')) {
+      setLocalConfig({ ...localConfig, systemPrompt: aiService.defaultSystemPrompt });
+    }
+  };
+
+  const handleProviderChange = (provider: string) => {
+    const preset = aiService.providerPresets[provider];
+    if (preset) {
+      setLocalConfig({
+        ...localConfig,
+        provider,
+        baseUrl: preset.baseUrl,
+        model: preset.model,
+      });
+    } else {
+      setLocalConfig({ ...localConfig, provider });
+    }
   };
 
   const handleTestConnection = async () => {
@@ -68,7 +115,8 @@ export default function ChatSettings() {
               setConfig={setLocalConfig}
               onSave={handleSave}
               onResetPrompt={handleResetPrompt}
-              onBack={() => navigate('/chat')}
+              onProviderChange={handleProviderChange}
+              onBack={handleBack}
               savedTip={savedTip}
               testing={testing}
               testResult={testResult}
@@ -84,7 +132,8 @@ export default function ChatSettings() {
           setConfig={setLocalConfig}
           onSave={handleSave}
           onResetPrompt={handleResetPrompt}
-          onBack={() => navigate('/chat')}
+          onProviderChange={handleProviderChange}
+          onBack={handleBack}
           savedTip={savedTip}
           testing={testing}
           testResult={testResult}
@@ -100,6 +149,7 @@ function SettingsContent({
   setConfig,
   onSave,
   onResetPrompt,
+  onProviderChange,
   onBack,
   savedTip,
   testing,
@@ -110,6 +160,7 @@ function SettingsContent({
   setConfig: (c: any) => void;
   onSave: () => void;
   onResetPrompt: () => void;
+  onProviderChange: (provider: string) => void;
   onBack: () => void;
   savedTip: boolean;
   testing: boolean;
@@ -161,7 +212,7 @@ function SettingsContent({
               <label className="block text-xs text-ink-light dark:text-gray-400 mb-1.5 font-sans">Provider</label>
               <select
                 value={config.provider}
-                onChange={(e) => setConfig({ ...config, provider: e.target.value })}
+                onChange={(e) => onProviderChange(e.target.value)}
                 className="w-full px-3 py-2.5 bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
               >
                 <option value="openai">OpenAI 兼容</option>

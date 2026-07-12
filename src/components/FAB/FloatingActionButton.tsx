@@ -1,25 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Sparkles, PenLine } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 
 export default function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false);
   const { setShowAiModal, openAddTaskModal } = useTaskStore();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const toggle = () => setIsOpen(!isOpen);
+  const close = () => setIsOpen(false);
 
   const handleAiPlan = () => {
     setShowAiModal(true);
-    setIsOpen(false);
+    close();
   };
 
   const handleQuickAdd = () => {
     openAddTaskModal();
-    setIsOpen(false);
+    close();
   };
 
+  // 修复：点击外部收起 FAB 菜单
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        close();
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="fixed bottom-6 right-6 z-40">
+    <div ref={containerRef} className="fixed bottom-6 right-6 z-40">
       {/* 展开的菜单 */}
       <div
         className={`absolute bottom-16 right-0 flex flex-col gap-2.5 items-end transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${

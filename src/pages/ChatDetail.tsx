@@ -31,6 +31,7 @@ export default function ChatDetail() {
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const voiceInputStartRef = useRef<string>('');
 
   const chat = chats.find((c) => c.id === id);
 
@@ -94,6 +95,8 @@ export default function ChatDetail() {
       return;
     }
 
+    voiceInputStartRef.current = input;
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN';
     recognition.interimResults = true;
@@ -104,7 +107,8 @@ export default function ChatDetail() {
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      setInput(transcript);
+      const prefix = voiceInputStartRef.current ? voiceInputStartRef.current + ' ' : '';
+      setInput(prefix + transcript);
     };
 
     recognition.onerror = (event: any) => {
@@ -479,7 +483,7 @@ function MessageBubble({
           />
 
           {!isUser && isLast && (
-            <div className="flex items-center gap-1 mt-1.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 mt-1.5 opacity-60 transition-opacity">
               <button
                 onClick={onCopy}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] text-ink-light dark:text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"

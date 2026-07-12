@@ -35,8 +35,28 @@ function genTaskId(): number {
   return Date.now() * 1000 + (taskIdCounter++ % 1000);
 }
 
+export const PROVIDER_PRESETS: Record<string, { baseUrl: string; model: string }> = {
+  openai: {
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-4o-mini',
+  },
+  gemini: {
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    model: 'gemini-2.0-flash',
+  },
+  anthropic: {
+    baseUrl: 'https://api.anthropic.com/v1',
+    model: 'claude-3-5-sonnet-20241022',
+  },
+  ollama: {
+    baseUrl: 'http://localhost:11434/v1',
+    model: 'llama3.2',
+  },
+};
+
 export const aiService = {
   defaultSystemPrompt: DEFAULT_SYSTEM_PROMPT,
+  providerPresets: PROVIDER_PRESETS,
 
   async chat(
     messages: { role: string; content: string }[],

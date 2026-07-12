@@ -37,6 +37,23 @@ export default function SettingsModal() {
     tipTimer.current = setTimeout(() => setSavedTip(false), 1500);
   };
 
+  const handleProviderChange = (provider: string) => {
+    const preset = aiService.providerPresets[provider];
+    if (preset) {
+      updateAiConfig({
+        provider,
+        baseUrl: preset.baseUrl,
+        model: preset.model,
+      });
+    } else {
+      updateAiConfig({ provider });
+    }
+    setSavedTip(true);
+    setTestResult(null);
+    clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => setSavedTip(false), 1500);
+  };
+
   const handleTestConnection = async () => {
     if (!aiConfig.apiKey) {
       setTestResult({ success: false, message: '请先填写 API Key' });
@@ -189,7 +206,7 @@ export default function SettingsModal() {
                     </label>
                     <select
                       value={aiConfig.provider}
-                      onChange={(e) => handleAiConfigChange('provider', e.target.value)}
+                      onChange={(e) => handleProviderChange(e.target.value)}
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     >
                       <option value="openai">OpenAI 兼容</option>
