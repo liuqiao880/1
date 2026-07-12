@@ -13,6 +13,7 @@ import {
   CheckCheck,
   RefreshCw,
   Mic,
+  Settings,
 } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { useTaskStore } from '@/store/useTaskStore';
@@ -169,6 +170,7 @@ export default function ChatDetail() {
             <ChatHeader
               title={chat.title}
               onBack={() => navigate('/chat')}
+              onSettings={() => navigate('/chat/settings')}
               onNewChat={() => {
                 const c = createChat();
                 navigate(`/chat/${c.id}`);
@@ -206,6 +208,7 @@ export default function ChatDetail() {
         <ChatHeader
           title={chat.title}
           onBack={() => navigate('/chat')}
+          onSettings={() => navigate('/chat/settings')}
           onNewChat={() => {
             const c = createChat();
             navigate(`/chat/${c.id}`);
@@ -243,10 +246,12 @@ export default function ChatDetail() {
 function ChatHeader({
   title,
   onBack,
+  onSettings,
   onNewChat,
 }: {
   title: string;
   onBack: () => void;
+  onSettings: () => void;
   onNewChat: () => void;
 }) {
   return (
@@ -262,15 +267,23 @@ function ChatHeader({
           <Sparkles size={12} />
         </div>
       </div>
-      <span className="font-serif font-semibold text-ink-black dark:text-white text-sm truncate max-w-[180px]">
+      <span className="font-serif font-semibold text-ink-black dark:text-white text-sm truncate max-w-[140px]">
         {title}
       </span>
-      <button
-        onClick={onNewChat}
-        className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
-      >
-        <Plus size={16} className="text-ink-gray dark:text-gray-400" />
-      </button>
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={onSettings}
+          className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+        >
+          <Settings size={16} className="text-ink-light dark:text-gray-400" />
+        </button>
+        <button
+          onClick={onNewChat}
+          className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
+        >
+          <Plus size={16} className="text-ink-gray dark:text-gray-400" />
+        </button>
+      </div>
     </div>
   );
 }
