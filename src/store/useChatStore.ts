@@ -68,6 +68,7 @@ export const useChatStore = create<ChatState>()(
 
       sendMessage: async (chatId: string, content: string) => {
         if (!content.trim()) return;
+        if (get().isLoading) return; // 竞态防护
 
         const userMsg: ChatMessage = {
           id: genId(),
@@ -82,7 +83,7 @@ export const useChatStore = create<ChatState>()(
           return {
             ...c,
             messages: [...c.messages, userMsg],
-            title: isFirst ? content.slice(0, 20) : c.title,
+            title: isFirst ? (content.length > 20 ? content.slice(0, 20) + '…' : content) : c.title,
             updateTime: Date.now(),
           };
         });
@@ -92,7 +93,9 @@ export const useChatStore = create<ChatState>()(
           const chat = chats.find((c) => c.id === chatId);
           if (!chat) throw new Error('对话不存在');
 
-          const msgHistory = chat.messages.map((m) => ({
+          // 限制历史消息数量，避免超出 token 上限
+          const recentMessages = chat.messages.slice(-20);
+          const msgHistory = recentMessages.map((m) => ({
             role: m.role,
             content: m.content,
           }));
@@ -118,7 +121,6 @@ export const useChatStore = create<ChatState>()(
             isLoading: false,
           });
         } catch (error) {
-          console.error('发送消息失败:', error);
           const errorMsg: ChatMessage = {
             id: genId(),
             role: 'assistant',
@@ -137,6 +139,8 @@ export const useChatStore = create<ChatState>()(
       },
 
       regenerateLastResponse: async (chatId: string) => {
+        if (get().isLoading) return; // 竞态防护
+
         const chat = get().chats.find((c) => c.id === chatId);
         if (!chat) return;
 
@@ -144,6 +148,7 @@ export const useChatStore = create<ChatState>()(
         if (lastUserIdx === -1) return;
 
         const userMsgIdx = chat.messages.length - 1 - lastUserIdx;
+        // 截断到包含最后一条 user 消息，删除之后的 assistant 消息
         const truncatedMessages = chat.messages.slice(0, userMsgIdx + 1);
 
         set({
@@ -156,7 +161,8 @@ export const useChatStore = create<ChatState>()(
         });
 
         try {
-          const msgHistory = truncatedMessages.map((m) => ({
+          const recentMessages = truncatedMessages.slice(-20);
+          const msgHistory = recentMessages.map((m) => ({
             role: m.role,
             content: m.content,
           }));
@@ -182,7 +188,6 @@ export const useChatStore = create<ChatState>()(
             isLoading: false,
           });
         } catch (error) {
-          console.error('重新生成失败:', error);
           const errorMsg: ChatMessage = {
             id: genId(),
             role: 'assistant',
@@ -206,6 +211,12 @@ export const useChatStore = create<ChatState>()(
     }),
     {
       name: 'taskflow-chat',
+      version: 2,
+      merge: (persisted: any, current) => ({
+        ...current,
+        ...persisted,
+        aiConfig: { ...current.aiConfig, ...(persisted?.aiConfig || {}), apiKey: '' },
+      }),
       partialize: (state) => ({
         chats: state.chats,
         aiConfig: {

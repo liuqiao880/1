@@ -1,8 +1,8 @@
 import { X, Moon, Sun, Bell, Palette, Key, Info, Shield, Check } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useChatStore } from '@/store/useChatStore';
-import { useState } from 'react';
-import { AccentColor } from '@/types/task';
+import { useState, useRef } from 'react';
+import { AccentColor, AiConfig } from '@/types/task';
 
 const accentColors: { key: AccentColor; label: string; value: string }[] = [
   { key: 'red', label: '报纸红', value: '#C41E3A' },
@@ -24,11 +24,13 @@ export default function SettingsModal() {
   } = useTaskStore();
   const { aiConfig, updateAiConfig } = useChatStore();
   const [savedTip, setSavedTip] = useState(false);
+  const tipTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const handleAiConfigChange = (field: string, value: string) => {
-    updateAiConfig({ [field]: value });
+  const handleAiConfigChange = (field: keyof AiConfig, value: string) => {
+    updateAiConfig({ [field]: value } as Partial<AiConfig>);
     setSavedTip(true);
-    setTimeout(() => setSavedTip(false), 1500);
+    clearTimeout(tipTimer.current);
+    tipTimer.current = setTimeout(() => setSavedTip(false), 1500);
   };
 
   if (!showSettings) return null;
@@ -216,7 +218,7 @@ export default function SettingsModal() {
                 <div className="mt-3 flex items-start gap-2 p-3 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5">
                   <Shield size={14} className="text-newspaper-red mt-0.5 flex-shrink-0" />
                   <p className="text-xs text-newspaper-red dark:text-newspaper-red-light font-sans">
-                    API Key 仅保存在本地，不会上传到任何服务器
+                    API Key 仅存在当前会话内存中，刷新页面后需重新输入；Key 会发送到您配置的 AI 服务地址
                   </p>
                 </div>
               </div>
@@ -276,7 +278,7 @@ export default function SettingsModal() {
                   </div>
                   <div className="text-left">
                     <p className="font-serif font-medium text-ink-black dark:text-white text-sm">版本</p>
-                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">TaskFlow v0.5.0</p>
+                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">TaskFlow v0.6.0</p>
                   </div>
                 </div>
               </div>

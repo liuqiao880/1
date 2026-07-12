@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,6 +51,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -128,9 +130,9 @@ fun ChatDetailScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            viewModel.createNewChat { newId ->
+                            viewModel.createNewChat(onCreated = { newId ->
                                 onNewChat(newId)
-                            }
+                            })
                         }
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "新对话")
@@ -499,6 +501,13 @@ fun ChatInputBar(
         } else null
     }
 
+    // 修复：组件卸载时销毁 SpeechRecognizer，防止内存泄漏
+    DisposableEffect(speechRecognizer) {
+        onDispose {
+            speechRecognizer?.destroy()
+        }
+    }
+
     val speechIntent = remember {
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
@@ -618,7 +627,9 @@ fun ChatInputBar(
             } else {
                 IconButton(
                     onClick = {
-                        if (speechRecognizer != null) {
+                        if (speechRecognizer == null) {
+                            Toast.makeText(context, "当前设备不支持语音识别", Toast.LENGTH_SHORT).show()
+                        } else {
                             if (isListening) {
                                 speechRecognizer.stopListening()
                                 isListening = false
@@ -628,6 +639,7 @@ fun ChatInputBar(
                                     isListening = true
                                 } catch (e: Exception) {
                                     isListening = false
+                                    Toast.makeText(context, "语音识别启动失败", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }

@@ -11,4 +11,6 @@ interface ChatRepository {
     suspend fun deleteChat(chatId: String)
     suspend fun sendMessage(chatId: String, content: String): ChatMessage?
     suspend fun updateChatTitle(chatId: String, title: String)
+    suspend fun deleteMessagesFrom(chatId: String, timestamp: Long)
+    suspend fun getChatById(chatId: String): Chat?
 }

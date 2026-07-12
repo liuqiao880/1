@@ -30,7 +30,7 @@ export default function AiPlanModal() {
   };
 
   const handleGenerate = async () => {
-    if (!title.trim()) return;
+    if (!title.trim() || step === 'loading') return;
     setStep('loading');
     setErrorMsg('');
 
@@ -97,30 +97,8 @@ ${dueDate ? `截止日期：${dueDate}\n` : ''}
   };
 
   const handleConfirm = () => {
-    const isDemo = !aiConfig.apiKey;
-    const flattenSelected = (list: Task[]): Task[] => {
-      const result: Task[] = [];
-      list.forEach((t) => {
-        if (selectedIds.has(t.id)) {
-          const newId = Date.now() + Math.floor(Math.random() * 100000);
-          const newTask: Task = {
-            ...t,
-            id: newId,
-            children: t.children ? flattenSelected(t.children).map((c, i) => ({
-              ...c,
-              id: newId + i + 1,
-              parentId: newId,
-            })) : undefined,
-          };
-          result.push(newTask);
-        } else if (t.children) {
-          result.push(...flattenSelected(t.children));
-        }
-      });
-      return result;
-    };
-
-    const toImport = flattenSelected(generatedTasks);
+    // 修复：使用 aiService 统一方法，正确处理父子关系和 ID
+    const toImport = aiService.flattenSelectedTasks(generatedTasks, selectedIds);
     toImport.forEach((t) => addTask(t));
 
     setShowAiModal(false);
@@ -152,7 +130,7 @@ ${dueDate ? `截止日期：${dueDate}\n` : ''}
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
         className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
-        onClick={close}
+        onClick={step === 'loading' ? undefined : close}
       />
 
       <div className="relative w-full sm:max-w-md bg-paper-cream dark:bg-gray-900 sm:rounded-sm shadow-2xl animate-slideUp max-h-[85vh] flex flex-col border border-line-separator dark:border-gray-800">

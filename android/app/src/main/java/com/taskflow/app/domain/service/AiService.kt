@@ -83,22 +83,33 @@ class AiService {
 
         try {
             val response = client.newCall(request).execute()
-            val body = response.body?.string() ?: ""
-            if (!response.isSuccessful) {
-                throw Exception("API 请求失败 (${response.code}): ${body.take(200)}")
+            response.use {
+                val body = it.body?.string() ?: ""
+                if (!it.isSuccessful) {
+                    throw Exception("API 请求失败 (${it.code}): ${body.take(200)}")
+                }
+                val responseType = object : TypeToken<Map<String, Any>>() {}.type
+                val json = gson.fromJson<Map<String, Any>>(body, responseType)
+                    ?: throw Exception("AI 返回数据格式异常，无法解析")
+                @Suppress("UNCHECKED_CAST")
+                val choices = json["choices"] as? List<Map<String, Any>>
+                    ?: throw Exception("AI 响应缺少 choices 字段")
+                val message = choices.firstOrNull()?.get("message") as? Map<String, Any>
+                    ?: throw Exception("AI 响应缺少 message 字段")
+                val content = message["content"]
+                when (content) {
+                    is String -> content
+                    is List<*> -> content.joinToString("") { it.toString() }
+                    else -> ""
+                }
             }
-            val responseType = object : TypeToken<Map<String, Any>>() {}.type
-            val json = gson.fromJson<Map<String, Any>>(body, responseType)
-            @Suppress("UNCHECKED_CAST")
-            val choices = json["choices"] as? List<Map<String, Any>> ?: return@withContext ""
-            val message = choices.firstOrNull()?.get("message") as? Map<String, Any> ?: return@withContext ""
-            message["content"] as? String ?: ""
         } catch (e: SocketTimeoutException) {
             throw Exception("请求超时，请检查网络连接")
         } catch (e: UnknownHostException) {
             throw Exception("无法连接到服务器，请检查 Base URL")
         } catch (e: Exception) {
-            if (e.message?.startsWith("API") == true || e.message?.startsWith("请求") == true || e.message?.startsWith("无法") == true) {
+            if (e.message?.startsWith("API") == true || e.message?.startsWith("请求") == true ||
+                e.message?.startsWith("无法") == true || e.message?.startsWith("AI") == true) {
                 throw e
             }
             throw Exception("请求失败: ${e.message}")
@@ -195,8 +206,8 @@ class AiService {
     }
 
     fun parseTasksFromResponse(content: String): List<Task> {
-        // 优先尝试 JSON 格式解析
-        val jsonMatch = Regex("""```json\s*([\s\S]*?)\s*```""").find(content)
+        // 优先尝试 JSON 格式解析（支持 ```json、```JSON、``` 等）
+        val jsonMatch = Regex("""```(?:json|JSON)?\s*([\s\S]*?)\s*```""").find(content)
         if (jsonMatch != null) {
             try {
                 val jsonStr = jsonMatch.groupValues[1]
@@ -209,6 +220,21 @@ class AiService {
                 // JSON 解析失败，回退到正则
             }
         }
+        // 尝试直接解析为 JSON
+        val objStart = content.indexOf('{')
+        val objEnd = content.lastIndexOf('}')
+        if (objStart != -1 && objEnd != -1 && objEnd > objStart) {
+            try {
+                val jsonStr = content.substring(objStart, objEnd + 1)
+                val responseType = object : TypeToken<Map<String, Any>>() {}.type
+                val parsed = gson.fromJson<Map<String, Any>>(jsonStr, responseType)
+                @Suppress("UNCHECKED_CAST")
+                val rawTasks = parsed["tasks"] as? List<Map<String, Any>> ?: return emptyList()
+                return convertJsonToTasks(rawTasks)
+            } catch (e: Exception) {
+                // 忽略
+            }
+        }
         // 回退到正则解析
         return parseTasksByRegex(content)
     }
@@ -216,10 +242,8 @@ class AiService {
     private fun convertJsonToTasks(rawTasks: List<Map<String, Any>>, parentId: Int? = null): List<Task> {
         val todayTs = System.currentTimeMillis()
         val dayMs = 24 * 60 * 60 * 1000L
-        var nextId = 1000
-
+        // 修复：使用 id=0 让数据库自动生成 ID，避免硬编码 ID 冲突
         return rawTasks.mapIndexed { index, item ->
-            val id = nextId + index
             val priority = when ((item["priority"] as? Double)?.toInt() ?: 2) {
                 1 -> TaskPriority.HIGH
                 3 -> TaskPriority.LOW
@@ -229,7 +253,7 @@ class AiService {
 
             @Suppress("UNCHECKED_CAST")
             val children = (item["children"] as? List<Map<String, Any>>)?.let { childList ->
-                childList.mapIndexed { childIndex, childItem ->
+                childList.mapIndexed { _, childItem ->
                     val childPriority = when ((childItem["priority"] as? Double)?.toInt() ?: 2) {
                         1 -> TaskPriority.HIGH
                         3 -> TaskPriority.LOW
@@ -237,10 +261,10 @@ class AiService {
                     }
                     val childDueDays = (childItem["dueDaysFromNow"] as? Double)?.toInt() ?: 0
                     Task(
-                        id = nextId + rawTasks.size + childIndex,
+                        id = 0, // 让数据库自动生成
                         title = childItem["title"] as? String ?: "",
                         description = childItem["description"] as? String,
-                        parentId = id,
+                        parentId = null, // 由 repository 在插入时回填
                         priority = childPriority,
                         dueDate = todayTs + childDueDays * dayMs,
                         aiGenerated = true,
@@ -250,7 +274,7 @@ class AiService {
             } ?: emptyList()
 
             Task(
-                id = id,
+                id = 0, // 让数据库自动生成
                 title = item["title"] as? String ?: "",
                 description = item["description"] as? String,
                 parentId = parentId,

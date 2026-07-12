@@ -16,13 +16,14 @@ import {
 } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { useTaskStore } from '@/store/useTaskStore';
+import { aiService } from '@/services/aiService';
 import { ChatMessage, Task } from '@/types/task';
 
 export default function ChatDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { chats, sendMessage, regenerateLastResponse, isLoading, createChat } = useChatStore();
-  const { addTask } = useTaskStore();
+  const addTask = useTaskStore((s) => s.addTask);
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [importToast, setImportToast] = useState<{ show: boolean; count: number }>({ show: false, count: 0 });
@@ -32,16 +33,29 @@ export default function ChatDetail() {
 
   const chat = chats.find((c) => c.id === id);
 
+  // 修复：chat 不存在时重定向，而非渲染空白页
   useEffect(() => {
-    if (!chat && chats.length === 0) {
-      const newChat = createChat();
-      navigate(`/chat/${newChat.id}`, { replace: true });
+    if (!chat) {
+      if (chats.length === 0) {
+        const newChat = createChat();
+        navigate(`/chat/${newChat.id}`, { replace: true });
+      } else {
+        navigate(`/chat/${chats[0].id}`, { replace: true });
+      }
     }
   }, [chat, chats.length, createChat, navigate]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat?.messages.length, isLoading]);
+
+  // 修复：组件卸载时清理语音识别
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || !id) return;
@@ -108,33 +122,28 @@ export default function ChatDetail() {
 
   const handleCopy = async (msg: ChatMessage) => {
     const text = msg.content.replace(/```json[\s\S]*?```/g, '').trim();
-    await navigator.clipboard.writeText(text);
-    setCopiedId(msg.id);
-    setTimeout(() => setCopiedId(null), 1500);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(msg.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    } catch {
+      // 降级处理
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(textarea);
+      setCopiedId(msg.id);
+      setTimeout(() => setCopiedId(null), 1500);
+    }
   };
 
+  // 修复：使用 aiService.flattenSelectedTasks 统一方法，正确处理父子关系
   const handleImportTasks = (tasks: Task[], selectedIds: Set<number>) => {
-    const flattenTasks = (list: Task[]): Task[] => {
-      const result: Task[] = [];
-      list.forEach((t) => {
-        if (selectedIds.has(t.id)) {
-          const newTask = {
-            ...t,
-            id: Date.now() + Math.floor(Math.random() * 10000),
-            children: t.children ? flattenTasks(t.children).map((c, i) => ({
-              ...c,
-              id: Date.now() + Math.floor(Math.random() * 10000) + i + 1,
-            })) : undefined,
-          };
-          result.push(newTask);
-        } else if (t.children) {
-          result.push(...flattenTasks(t.children));
-        }
-      });
-      return result.flat();
-    };
-
-    const toImport = flattenTasks(tasks);
+    const toImport = aiService.flattenSelectedTasks(tasks, selectedIds);
     toImport.forEach((t) => addTask(t));
 
     setImportToast({ show: true, count: toImport.length });
@@ -362,7 +371,8 @@ function MessageBubble({
   index: number;
 }) {
   const isUser = message.role === 'user';
-  const hasTasks = message.suggestedTasks && message.suggestedTasks.length > 0;
+  const suggestedTasks = message.suggestedTasks; // 提取局部变量避免智能转换问题
+  const hasTasks = suggestedTasks && suggestedTasks.length > 0;
   const [showTasks, setShowTasks] = useState(false);
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(() => {
     const ids = new Set<number>();
@@ -372,7 +382,7 @@ function MessageBubble({
         if (t.children) collectIds(t.children);
       });
     };
-    if (message.suggestedTasks) collectIds(message.suggestedTasks);
+    if (suggestedTasks) collectIds(suggestedTasks);
     return ids;
   });
 
@@ -381,7 +391,7 @@ function MessageBubble({
   }, [message.content]);
 
   const totalTaskCount = useMemo(() => {
-    if (!message.suggestedTasks) return 0;
+    if (!suggestedTasks) return 0;
     let count = 0;
     const countTasks = (tasks: Task[]) => {
       tasks.forEach((t) => {
@@ -389,9 +399,9 @@ function MessageBubble({
         if (t.children) countTasks(t.children);
       });
     };
-    countTasks(message.suggestedTasks);
+    countTasks(suggestedTasks);
     return count;
-  }, [message.suggestedTasks]);
+  }, [suggestedTasks]);
 
   const selectedCount = selectedTaskIds.size;
 
@@ -408,7 +418,7 @@ function MessageBubble({
   };
 
   const toggleAll = () => {
-    if (!message.suggestedTasks) return;
+    if (!suggestedTasks) return;
     if (selectedCount === totalTaskCount) {
       setSelectedTaskIds(new Set());
     } else {
@@ -419,7 +429,7 @@ function MessageBubble({
           if (t.children) collectIds(t.children);
         });
       };
-      collectIds(message.suggestedTasks);
+      collectIds(suggestedTasks);
       setSelectedTaskIds(ids);
     }
   };
@@ -456,7 +466,7 @@ function MessageBubble({
           />
 
           {!isUser && isLast && (
-            <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 mt-1.5 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <button
                 onClick={onCopy}
                 className="flex items-center gap-1 px-2 py-1 text-[10px] text-ink-light dark:text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
@@ -484,7 +494,7 @@ function MessageBubble({
           )}
         </div>
 
-        {hasTasks && (
+        {hasTasks && suggestedTasks && (
           <div className="mt-2">
             <button
               onClick={() => setShowTasks(!showTasks)}
@@ -495,7 +505,7 @@ function MessageBubble({
               } hover:shadow-sm active:scale-[0.99]`}
             >
               <ListTodo size={12} />
-              <span>任务清单 ({message.suggestedTasks!.length} 组 / 共 {totalTaskCount} 项</span>
+              <span>任务清单 ({suggestedTasks.length} 组 / 共 {totalTaskCount} 项)</span>
               {showTasks ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
             </button>
 
@@ -509,17 +519,17 @@ function MessageBubble({
                       onChange={toggleAll}
                       className="w-3.5 h-3.5 border-ink-light text-newspaper-red focus:ring-newspaper-red"
                     />
-                    全选 ({selectedCount}/{totalTaskCount}
+                    全选 ({selectedCount}/{totalTaskCount})
                   </label>
                 </div>
                 <TaskPreview
-                  tasks={message.suggestedTasks!}
+                  tasks={suggestedTasks}
                   selectedIds={selectedTaskIds}
                   onToggle={toggleTask}
                 />
                 <div className="p-3 border-t border-line-separator dark:border-gray-700">
                   <button
-                    onClick={() => onImport(message.suggestedTasks!, selectedTaskIds)}
+                    onClick={() => onImport(suggestedTasks, selectedTaskIds)}
                     disabled={selectedCount === 0}
                     className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-medium transition-all ${
                       selectedCount > 0
@@ -572,7 +582,7 @@ function TaskPreview({
               onChange={() => onToggle(task.id)}
               className="mt-0.5 w-3.5 h-3.5 border-ink-light text-newspaper-red focus:ring-newspaper-red flex-shrink-0"
             />
-            <div className={`mt-1 w-0.5 h-3.5 ${priorityColors[task.priority]} flex-shrink-0`} />
+            <div className={`mt-1 w-0.5 h-3.5 ${priorityColors[task.priority] || priorityColors[2]} flex-shrink-0`} />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-ink-black dark:text-white font-sans">
                 {task.title}
@@ -649,59 +659,68 @@ function InputBar({
             style={{ minHeight: '38px' }}
           />
         </div>
-        {input.trim() ? (
-          <button
-            onClick={onSend}
-            disabled={isLoading}
-            className="w-9 h-9 flex items-center justify-center bg-newspaper-red hover:bg-newspaper-red-dark text-paper-white transition-all active:scale-95 flex-shrink-0 shadow-sm"
-          >
-            <Send size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={onVoiceInput}
-            className={`w-9 h-9 flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${
-              isListening
-                ? 'bg-newspaper-red text-paper-white animate-pulse'
-                : 'hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            <Mic size={18} className={isListening ? 'text-paper-white' : 'text-ink-light'} />
-          </button>
-        )}
+        <button
+          onClick={onSend}
+          disabled={isLoading || !input.trim()}
+          className={`w-9 h-9 flex items-center justify-center transition-all active:scale-95 flex-shrink-0 shadow-sm ${
+            input.trim() && !isLoading
+              ? 'bg-newspaper-red hover:bg-newspaper-red-dark text-paper-white'
+              : 'bg-line-separator dark:bg-gray-700 text-ink-light cursor-not-allowed'
+          }`}
+        >
+          <Send size={16} />
+        </button>
       </div>
     </div>
   );
 }
 
+// 修复 XSS：先转义全文，再处理 markdown 标记
 function renderMarkdown(text: string): string {
-  let html = text
-    .replace(/```json[\s\S]*?```/g, '')
-    .replace(/```([\s\S]*?)```/g, (_, code) => {
-      return `<pre class="mt-2 p-3 bg-ink-black dark:bg-gray-950 text-xs text-gray-300 overflow-x-auto border border-line-separator"><code>${escapeHtml(code.trim())}</code></pre>`;
-    })
-    .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-paper-cream dark:bg-gray-700 text-newspaper-red text-xs font-mono border border-line-separator">$1</code>');
+  // 1. 先转义所有 HTML 特殊字符，防止 XSS
+  let html = escapeHtml(text);
 
+  // 2. 移除 json 代码块（不显示）
+  html = html.replace(/```json[\s\S]*?```/g, '');
+
+  // 3. 处理通用代码块
+  html = html.replace(/```([\s\S]*?)```/g, (_, code) => {
+    return `<pre class="mt-2 p-3 bg-ink-black dark:bg-gray-950 text-xs text-gray-300 overflow-x-auto border border-line-separator"><code>${code.trim()}</code></pre>`;
+  });
+
+  // 4. 行内代码
+  html = html.replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-paper-cream dark:bg-gray-700 text-newspaper-red text-xs font-mono border border-line-separator">$1</code>');
+
+  // 5. 标题
   html = html
     .replace(/^### (.+)$/gm, '<h3 class="font-serif font-semibold text-sm mt-3 mb-2">$1</h3>')
     .replace(/^## (.+)$/gm, '<h2 class="font-serif font-semibold text-base mt-4 mb-2">$1</h2>')
     .replace(/^# (.+)$/gm, '<h1 class="font-serif font-semibold text-lg mt-4 mb-2">$1</h1>');
 
+  // 6. 加粗和斜体
   html = html
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 
+  // 7. 引用块
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote class="border-l-2 border-newspaper-red pl-3 text-ink-gray italic my-2">$1</blockquote>');
+
+  // 8. 列表项
   html = html
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
     .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal">$1</li>');
 
+  // 9. 换行
   html = html.replace(/\n/g, '<br />');
 
   return html;
 }
 
 function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.appendChild(document.createTextNode(text));
-  return div.innerHTML;
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }

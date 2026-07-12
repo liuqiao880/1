@@ -49,7 +49,6 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
           description: description.trim() || undefined,
           priority,
           dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-          updateTime: now,
         }
       : {
           id: now + Math.floor(Math.random() * 100000),

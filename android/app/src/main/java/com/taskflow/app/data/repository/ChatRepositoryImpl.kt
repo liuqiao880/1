@@ -79,27 +79,32 @@ class ChatRepositoryImpl @Inject constructor(
         chatDao.insertMessage(userMsg.toEntity(chatId))
 
         if (isFirst) {
-            val title = content.take(20)
+            val title = if (content.length > 20) content.take(20) + "..." else content
             chatDao.updateChatTitle(chatId, title, now)
         } else {
             chatDao.updateChatTime(chatId, now)
         }
 
-        // 构建调用 AI 的历史：既有消息 + 当前用户消息
-        val history = existingMessages.map {
+        // 构建调用 AI 的历史：限制最近 20 条避免超出 token 上限
+        val recentMessages = existingMessages.takeLast(20)
+        val history = recentMessages.map {
             (if (it.role == "USER") "user" else "assistant") to it.content
         } + ("user" to content.trim())
 
+        // 修复：补全 provider 和 systemPrompt
         val aiConfig = AiConfigData(
-            apiKey = preferencesRepository.aiApiKey.first(),
+            provider = preferencesRepository.aiProvider.first(),
             baseUrl = preferencesRepository.aiBaseUrl.first(),
-            model = preferencesRepository.aiModel.first()
+            apiKey = preferencesRepository.aiApiKey.first(),
+            model = preferencesRepository.aiModel.first(),
+            systemPrompt = preferencesRepository.aiSystemPrompt.first()
         )
 
         val response = try {
             aiService.chat(history, aiConfig)
         } catch (e: Exception) {
-            "抱歉，AI 服务暂时不可用，请稍后重试。"
+            // 修复：保留原始错误信息
+            "⚠️ AI 服务调用失败：${e.message}\n\n请检查网络连接和 API 配置后重试。"
         }
         val suggestedTasks = aiService.parseTasksFromResponse(response)
 
@@ -119,5 +124,14 @@ class ChatRepositoryImpl @Inject constructor(
 
     override suspend fun updateChatTitle(chatId: String, title: String) {
         chatDao.updateChatTitle(chatId, title, System.currentTimeMillis())
+    }
+
+    override suspend fun deleteMessagesFrom(chatId: String, timestamp: Long) {
+        chatDao.deleteMessagesFrom(chatId, timestamp)
+    }
+
+    override suspend fun getChatById(chatId: String): Chat? {
+        val entity = chatDao.getChatById(chatId) ?: return null
+        return entity.toDomain(emptyList())
     }
 }
