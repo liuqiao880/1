@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -15,7 +16,7 @@ import javax.inject.Inject
 private val Context.dataStore by preferencesDataStore(name = "taskflow_prefs")
 
 class PreferencesRepositoryImpl @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) : PreferencesRepository {
 
     private object Keys {

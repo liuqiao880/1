@@ -13,6 +13,7 @@ import com.taskflow.app.domain.service.AiConfigData
 import com.taskflow.app.domain.service.AiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 

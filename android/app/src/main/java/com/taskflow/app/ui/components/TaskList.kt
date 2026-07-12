@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -78,6 +79,7 @@ fun TaskList(
                     isExpanded = expandedParents.contains(task.id),
                     isSelected = selectedTasks.contains(task.id),
                     multiSelectMode = multiSelectMode,
+                    selectedTasks = selectedTasks,
                     onClick = { onTaskClick(task) },
                     onCheckedChange = { onTaskChecked(task.id) },
                     onLongPress = { onTaskLongPress(task) },
@@ -124,6 +126,7 @@ fun TaskItem(
     isExpanded: Boolean,
     isSelected: Boolean,
     multiSelectMode: Boolean,
+    selectedTasks: Set<Int>,
     onClick: () -> Unit,
     onCheckedChange: () -> Unit,
     onLongPress: () -> Unit,

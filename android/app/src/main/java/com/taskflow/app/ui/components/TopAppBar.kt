@@ -17,7 +17,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Sparkles
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.ThemeType
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopAppBar(
     isSearchActive: Boolean,
@@ -85,7 +87,7 @@ fun TopAppBar(
             },
             actions = {
                 IconButton(onClick = onChatClick) {
-                    Icon(Icons.Default.Sparkles, contentDescription = "AI 对话", tint = Color(0xFFA855F7))
+                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI 对话", tint = Color(0xFFA855F7))
                 }
                 IconButton(onClick = { onSearchActiveChange(true) }) {
                     Icon(Icons.Default.Search, contentDescription = "搜索")
@@ -101,6 +103,7 @@ fun TopAppBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SearchBar(
     query: String,
