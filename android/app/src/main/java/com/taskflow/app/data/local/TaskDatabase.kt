@@ -10,7 +10,7 @@ import com.taskflow.app.data.local.entity.TaskEntity
 
 @Database(
     entities = [TaskEntity::class, ChatEntity::class, ChatMessageEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class TaskDatabase : RoomDatabase() {

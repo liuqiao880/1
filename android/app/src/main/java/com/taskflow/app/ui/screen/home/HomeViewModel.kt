@@ -203,6 +203,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val task = getTaskByIdUseCase(taskId).first()
             lastDeletedTask = task
+            lastDeletedTasks = emptyList()
             deleteTaskUseCase(taskId)
             _uiState.value = _uiState.value.copy(undoMessage = "任务已删除")
         }
@@ -210,11 +211,16 @@ class HomeViewModel @Inject constructor(
 
     fun undoDelete() {
         viewModelScope.launch {
-            lastDeletedTask?.let { task ->
-                addTaskUseCase(task)
-                lastDeletedTask = null
-                _uiState.value = _uiState.value.copy(undoMessage = null)
+            if (lastDeletedTasks.isNotEmpty()) {
+                lastDeletedTasks.forEach { addTaskUseCase(it) }
+                lastDeletedTasks = emptyList()
+            } else {
+                lastDeletedTask?.let { task ->
+                    addTaskUseCase(task)
+                    lastDeletedTask = null
+                }
             }
+            _uiState.value = _uiState.value.copy(undoMessage = null)
         }
     }
 
@@ -250,6 +256,7 @@ class HomeViewModel @Inject constructor(
                 deleteTaskUseCase(id)
             }
             lastDeletedTasks = deleted
+            lastDeletedTask = null
             _uiState.value = _uiState.value.copy(
                 multiSelectMode = false,
                 selectedTasks = emptySet(),

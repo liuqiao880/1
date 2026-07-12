@@ -1,5 +1,6 @@
 package com.taskflow.app.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -128,6 +129,13 @@ fun AiPlanModal(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable {
+                                        if (selectedTasks.contains(task)) {
+                                            selectedTasks.remove(task)
+                                        } else {
+                                            selectedTasks.add(task)
+                                        }
+                                    }
                                     .padding(vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

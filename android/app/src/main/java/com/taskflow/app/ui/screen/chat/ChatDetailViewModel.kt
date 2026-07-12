@@ -3,6 +3,8 @@ package com.taskflow.app.ui.screen.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.taskflow.app.domain.model.ChatMessage
+import com.taskflow.app.domain.model.Task
+import com.taskflow.app.domain.usecase.AddTasksUseCase
 import com.taskflow.app.domain.usecase.CreateChatUseCase
 import com.taskflow.app.domain.usecase.GetChatMessagesUseCase
 import com.taskflow.app.domain.usecase.SendChatMessageUseCase
@@ -25,7 +27,8 @@ data class ChatDetailUiState(
 class ChatDetailViewModel @Inject constructor(
     private val getChatMessagesUseCase: GetChatMessagesUseCase,
     private val sendChatMessageUseCase: SendChatMessageUseCase,
-    private val createChatUseCase: CreateChatUseCase
+    private val createChatUseCase: CreateChatUseCase,
+    private val addTasksUseCase: AddTasksUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatDetailUiState())
@@ -62,6 +65,12 @@ class ChatDetailViewModel @Inject constructor(
         viewModelScope.launch {
             val chat = createChatUseCase()
             onCreated(chat.id)
+        }
+    }
+
+    fun addTasksToTaskList(tasks: List<Task>) {
+        viewModelScope.launch {
+            addTasksUseCase(tasks)
         }
     }
 }

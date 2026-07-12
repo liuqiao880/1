@@ -176,7 +176,12 @@ fun ChatDetailScreen(
                         items = uiState.messages,
                         key = { it.id }
                     ) { message ->
-                        MessageBubble(message = message)
+                        MessageBubble(
+                            message = message,
+                            onAddTasks = { tasks ->
+                                viewModel.addTasksToTaskList(tasks)
+                            }
+                        )
                     }
                     if (uiState.isLoading) {
                         item {
