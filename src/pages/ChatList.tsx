@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MessageSquare, Trash2, ArrowLeft, Settings, Sparkles, Pin } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, ArrowLeft, Settings, Sparkles } from 'lucide-react';
 import { useChatStore } from '@/store/useChatStore';
 import { Chat } from '@/types/task';
 
@@ -29,15 +29,15 @@ export default function ChatList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-paper-white dark:bg-gray-950 flex flex-col">
       <div className="hidden sm:flex min-h-screen items-center justify-center py-8 px-4">
-        <div className="relative w-full max-w-md h-[85vh] bg-white dark:bg-gray-900 rounded-[40px] shadow-2xl overflow-hidden border-8 border-gray-900 dark:border-gray-800">
-          <div className="absolute top-0 left-0 right-0 h-7 bg-white dark:bg-gray-900 z-40 flex items-center justify-between px-6">
-            <span className="text-xs font-semibold text-gray-900 dark:text-white">9:41</span>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-gray-900 rounded-b-2xl" />
+        <div className="relative w-full max-w-md h-[85vh] bg-paper-cream dark:bg-gray-900 shadow-2xl overflow-hidden border border-line-separator dark:border-gray-800">
+          <div className="absolute top-0 left-0 right-0 h-7 bg-paper-cream dark:bg-gray-900 z-40 flex items-center justify-between px-6 border-b border-line-separator dark:border-gray-800">
+            <span className="text-[10px] font-medium text-ink-gray dark:text-gray-400">9:41</span>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-ink-black dark:bg-gray-700 rounded-b-sm" />
             <div className="flex gap-1 items-center">
-              <div className="w-4 h-2.5 border border-gray-900 dark:border-white rounded-sm relative">
-                <div className="absolute inset-0.5 bg-gray-900 dark:bg-white rounded-sm" />
+              <div className="w-3.5 h-2 border border-ink-black dark:border-gray-400 relative">
+                <div className="absolute inset-0.5 bg-ink-black dark:bg-gray-400" />
               </div>
             </div>
           </div>
@@ -93,33 +93,36 @@ function ChatListContent({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-line-separator dark:border-gray-800">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
-            <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
+            <ArrowLeft size={18} className="text-ink-gray dark:text-gray-400" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-              <Sparkles size={18} className="text-white" />
+            <div className="w-7 h-7 bg-newspaper-red flex items-center justify-center text-white">
+              <Sparkles size={14} />
             </div>
-            <h1 className="font-bold text-lg text-gray-900 dark:text-white">AI 对话</h1>
+            <div>
+              <h1 className="font-serif text-base font-semibold text-ink-black dark:text-white leading-none">AI 对话</h1>
+              <div className="newspaper-accent-line mt-0.5" style={{ width: '16px', height: '2px' }} />
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={onSettings}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
-            <Settings size={20} className="text-gray-500" />
+            <Settings size={18} className="text-ink-light dark:text-gray-500" />
           </button>
           <button
             onClick={onNewChat}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-500 hover:bg-purple-600 text-white transition-all active:scale-95"
+            className="w-9 h-9 flex items-center justify-center bg-ink-black dark:bg-gray-700 hover:bg-newspaper-red text-white transition-all active:scale-95"
           >
-            <Plus size={20} />
+            <Plus size={18} />
           </button>
         </div>
       </div>
@@ -127,23 +130,23 @@ function ChatListContent({
       <div className="flex-1 overflow-y-auto">
         {chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4">
-              <MessageSquare size={36} className="text-purple-500" />
+            <div className="w-16 h-16 border border-line-separator dark:border-gray-700 flex items-center justify-center mb-4">
+              <MessageSquare size={28} className="text-ink-light" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">开始新对话</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+            <h3 className="font-serif text-base font-semibold text-ink-gray dark:text-gray-300 mb-2">开始新对话</h3>
+            <p className="text-xs text-ink-light dark:text-gray-500 text-center mb-6 font-sans">
               和 AI 聊聊你的目标，让它帮你拆解成可执行的任务
             </p>
             <button
               onClick={onNewChat}
-              className="px-6 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-medium transition-all active:scale-95"
+              className="px-5 py-2 bg-ink-black dark:bg-gray-700 hover:bg-newspaper-red text-paper-white text-sm font-medium transition-all active:scale-95"
             >
               开始对话
             </button>
           </div>
         ) : (
-          <div className="p-3 space-y-1">
-            {chats.map((chat) => (
+          <div>
+            {chats.map((chat, idx) => (
               <ChatItem
                 key={chat.id}
                 chat={chat}
@@ -151,6 +154,7 @@ function ChatListContent({
                 onDelete={onDelete}
                 formatTime={formatTime}
                 formatDate={formatDate}
+                showBorder={idx < chats.length - 1}
               />
             ))}
           </div>
@@ -166,12 +170,14 @@ function ChatItem({
   onDelete,
   formatTime,
   formatDate,
+  showBorder,
 }: {
   chat: Chat;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
   formatTime: (ts: number) => string;
   formatDate: (ts: number) => string;
+  showBorder: boolean;
 }) {
   const [translateX, setTranslateX] = useState(0);
   const [startX, setStartX] = useState(0);
@@ -216,14 +222,14 @@ function ChatItem({
     : '暂无消息';
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className={`relative overflow-hidden ${showBorder ? 'border-b border-line-separator dark:border-gray-800' : ''}`}>
       <div
-        className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex items-center justify-center text-white z-0"
+        className="absolute right-0 top-0 bottom-0 w-20 bg-newspaper-red flex items-center justify-center text-white z-0"
         onClick={handleDelete}
       >
         <div className="flex flex-col items-center gap-1">
-          <Trash2 size={16} />
-          <span className="text-xs font-medium">删除</span>
+          <Trash2 size={14} />
+          <span className="text-[10px] font-medium">删除</span>
         </div>
       </div>
 
@@ -240,19 +246,19 @@ function ChatItem({
           transform: `translateX(${translateX}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
-        className="relative flex items-center gap-3 p-3 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors z-10 cursor-pointer active:scale-[0.99]"
+        className="relative flex items-center gap-3 px-5 py-3.5 bg-paper-white dark:bg-gray-900 hover:bg-paper-cream dark:hover:bg-gray-800/50 transition-colors z-10 cursor-pointer active:scale-[0.995]"
       >
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 flex items-center justify-center flex-shrink-0">
-          <MessageSquare size={20} className="text-purple-600 dark:text-purple-400" />
+        <div className="w-9 h-9 bg-newspaper-red/10 dark:bg-newspaper-red/20 flex items-center justify-center flex-shrink-0">
+          <MessageSquare size={16} className="text-newspaper-red dark:text-newspaper-red-light" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-medium text-gray-900 dark:text-white truncate">
+            <p className="font-serif text-sm font-medium text-ink-black dark:text-white truncate">
               {chat.title}
             </p>
-            <span className="text-xs text-gray-400 flex-shrink-0">{formatTime(chat.updateTime)}</span>
+            <span className="text-[10px] text-ink-light flex-shrink-0 tabular-nums font-sans">{formatTime(chat.updateTime)}</span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
+          <p className="text-xs text-ink-light dark:text-gray-500 truncate mt-0.5 font-sans">
             {preview || '暂无消息'}
           </p>
         </div>

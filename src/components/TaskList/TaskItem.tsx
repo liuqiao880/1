@@ -10,19 +10,19 @@ interface TaskItemProps {
   task: Task;
 }
 
-const priorityColors = {
-  1: 'bg-red-500',
-  2: 'bg-yellow-500',
-  3: 'bg-blue-500',
+const priorityColors: Record<number, string> = {
+  1: 'bg-priority-high',
+  2: 'bg-priority-medium',
+  3: 'bg-priority-low',
 };
 
-const priorityBgColors = {
-  1: 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400',
-  2: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400',
-  3: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400',
+const priorityTextColors: Record<number, string> = {
+  1: 'text-priority-high',
+  2: 'text-priority-medium',
+  3: 'text-priority-low',
 };
 
-const priorityLabels = {
+const priorityLabels: Record<number, string> = {
   1: '紧急',
   2: '普通',
   3: '低优',
@@ -141,11 +141,11 @@ export default function TaskItem({ task }: TaskItemProps) {
   };
 
   return (
-    <div className="mb-3">
-      <div className="relative overflow-hidden rounded-2xl">
+    <div>
+      <div className="relative overflow-hidden">
         {/* 左侧 - 完成操作 */}
         <div
-          className={`absolute left-0 top-0 bottom-0 w-24 bg-green-500 flex items-center justify-center text-white transition-opacity z-0 ${
+          className={`absolute left-0 top-0 bottom-0 w-24 bg-ink-black flex items-center justify-center text-white transition-opacity z-0 ${
             translateX > 10 ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={(e) => {
@@ -155,7 +155,7 @@ export default function TaskItem({ task }: TaskItemProps) {
           }}
         >
           <div className="flex flex-col items-center gap-1">
-            <Check size={18} />
+            <Check size={16} />
             <span className="text-xs font-medium">完成</span>
           </div>
         </div>
@@ -167,21 +167,21 @@ export default function TaskItem({ task }: TaskItemProps) {
         >
           <button
             onClick={handleEdit}
-            className="w-16 bg-blue-500 flex flex-col items-center justify-center text-white"
+            className="w-16 bg-ink-gray flex flex-col items-center justify-center text-white"
           >
-            <Calendar size={16} />
+            <Calendar size={14} />
             <span className="text-xs font-medium mt-1">编辑</span>
           </button>
           <button
             onClick={handleDelete}
-            className="w-12 bg-red-500 flex flex-col items-center justify-center text-white"
+            className="w-12 bg-newspaper-red flex flex-col items-center justify-center text-white"
           >
-            <Trash2 size={16} />
+            <Trash2 size={14} />
             <span className="text-xs font-medium mt-1">删除</span>
           </button>
         </div>
 
-        {/* 任务卡片 */}
+        {/* 任务项 - 报纸风格 */}
         <div
           onClick={handleRowClick}
           onTouchStart={handleTouchStart}
@@ -195,31 +195,31 @@ export default function TaskItem({ task }: TaskItemProps) {
             transform: `translateX(${translateX}px)`,
             transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}
-          className={`relative bg-white dark:bg-gray-800 shadow-sm border transition-all duration-200 z-10 ${
+          className={`relative bg-paper-white dark:bg-gray-900 border-b border-line-separator dark:border-gray-800 transition-all duration-200 z-10 ${
             isSelected
-              ? 'border-green-500 ring-2 ring-green-500/20'
-              : 'border-gray-100 dark:border-gray-700 hover:shadow-md'
-          } ${hasChildren ? 'cursor-pointer' : 'cursor-default'} active:scale-[0.99]`}
+              ? 'bg-newspaper-red/5 dark:bg-newspaper-red/10'
+              : 'hover:bg-paper-cream dark:hover:bg-gray-800/50'
+          } ${hasChildren ? 'cursor-pointer' : 'cursor-default'} active:scale-[0.995]`}
         >
           {/* 优先级色条 */}
-          <div className={`absolute left-0 top-0 bottom-0 w-1 ${priorityColors[task.priority]}`} />
+          <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${priorityColors[task.priority]}`} />
 
-          <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-            {/* 复选框 */}
+          <div className="flex items-start gap-3 px-5 py-3.5 pl-5">
+            {/* 复选框 - 描边风格 */}
             <button
               onClick={handleCheckboxClick}
-              className={`mt-0.5 w-6 h-6 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
+              className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
                 multiSelectMode
                   ? isSelected
-                    ? 'bg-green-600 border-green-600'
-                    : 'border-gray-300 dark:border-gray-500'
+                    ? 'bg-ink-black border-ink-black'
+                    : 'border-ink-light dark:border-gray-600'
                   : task.status === 'completed'
-                  ? 'bg-green-600 border-green-600 scale-100'
-                  : 'border-gray-300 dark:border-gray-500 hover:border-green-500'
+                  ? 'bg-ink-black border-ink-black'
+                  : 'border-ink-light dark:border-gray-600 hover:border-ink-black dark:hover:border-gray-400'
               }`}
             >
               <Check
-                size={14}
+                size={12}
                 className={`text-white transition-all duration-300 ${
                   multiSelectMode
                     ? isSelected
@@ -238,17 +238,17 @@ export default function TaskItem({ task }: TaskItemProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3
-                      className={`font-medium text-[15px] transition-all duration-300 ${
+                      className={`font-serif text-sm font-medium transition-all duration-300 ${
                         task.status === 'completed' && !multiSelectMode
-                          ? 'text-gray-400 dark:text-gray-500 line-through'
-                          : 'text-gray-900 dark:text-white'
+                          ? 'text-ink-light dark:text-gray-600 line-through'
+                          : 'text-ink-black dark:text-white'
                       }`}
                     >
                       {task.title}
                     </h3>
                     {task.aiGenerated && (
-                      <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 text-xs font-medium flex-shrink-0">
-                        <Sparkles size={10} />
+                      <span className="flex items-center gap-0.5 px-1.5 py-0.5 border border-newspaper-red/20 dark:border-newspaper-red/30 text-newspaper-red dark:text-newspaper-red-light text-[10px] font-medium flex-shrink-0">
+                        <Sparkles size={9} />
                         AI
                       </span>
                     )}
@@ -256,33 +256,33 @@ export default function TaskItem({ task }: TaskItemProps) {
 
                   {task.description && (
                     <p
-                      className={`mt-1 text-sm line-clamp-1 transition-all duration-300 ${
+                      className={`mt-0.5 text-xs line-clamp-1 transition-all duration-300 font-sans ${
                         task.status === 'completed'
-                          ? 'text-gray-300 dark:text-gray-600'
-                          : 'text-gray-500 dark:text-gray-400'
+                          ? 'text-ink-light/50 dark:text-gray-700'
+                          : 'text-ink-gray dark:text-gray-400'
                       }`}
                     >
                       {task.description}
                     </p>
                   )}
 
-                  <div className="mt-2 flex items-center gap-3 flex-wrap">
+                  <div className="mt-1.5 flex items-center gap-3 flex-wrap">
                     {task.dueDate && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                        <Calendar size={12} />
+                      <div className="flex items-center gap-1 text-xs text-ink-light dark:text-gray-500 font-sans">
+                        <Calendar size={11} />
                         <span>{formatDate(task.dueDate)}</span>
                       </div>
                     )}
                     <div
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${priorityBgColors[task.priority]}`}
+                      className={`flex items-center gap-1 text-[10px] font-medium font-sans ${priorityTextColors[task.priority]}`}
                     >
-                      <Flag size={10} />
+                      <Flag size={9} />
                       <span>{priorityLabels[task.priority]}</span>
                     </div>
                     {hasChildren && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <ProgressBar percent={progress.percent} />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-[10px] text-ink-light dark:text-gray-500 tabular-nums font-sans">
                           {progress.percent}%
                         </span>
                       </div>
@@ -295,13 +295,13 @@ export default function TaskItem({ task }: TaskItemProps) {
                             startPomodoro(task.id, task.title);
                           }
                         }}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                        className={`flex items-center gap-1 text-[10px] font-medium font-sans transition-colors ${
                           task.pomodoroCount > 0
-                            ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30'
+                            ? 'text-newspaper-red dark:text-newspaper-red-light'
+                            : 'text-ink-light dark:text-gray-500 hover:text-newspaper-red dark:hover:text-newspaper-red-light'
                         } ${multiSelectMode ? 'pointer-events-none opacity-60' : ''}`}
                       >
-                        <Timer size={10} />
+                        <Timer size={9} />
                         <span>{task.pomodoroCount || '开始'}</span>
                       </button>
                     )}
@@ -310,10 +310,10 @@ export default function TaskItem({ task }: TaskItemProps) {
 
                 {/* 展开箭头 */}
                 {hasChildren && (
-                  <div className="flex-shrink-0 mt-1">
+                  <div className="flex-shrink-0 mt-0.5">
                     <ChevronDown
-                      size={18}
-                      className={`text-gray-400 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+                      size={16}
+                      className={`text-ink-light transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                         isExpanded ? 'rotate-180' : ''
                       }`}
                     />
@@ -329,10 +329,10 @@ export default function TaskItem({ task }: TaskItemProps) {
       {hasChildren && (
         <div
           className={`overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-            isExpanded ? 'max-h-[2000px] opacity-100 mt-2' : 'max-h-0 opacity-0'
+            isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="ml-6 pl-6 border-l-2 border-gray-100 dark:border-gray-700 space-y-2">
+          <div className="ml-8 pl-4 border-l border-line-separator dark:border-gray-800">
             {task.children!.map((child) => (
               <SubTaskItem key={child.id} task={child} />
             ))}
@@ -399,15 +399,15 @@ function SubTaskItem({ task }: { task: Task }) {
   const isSelected = selectedTasks.includes(task.id);
 
   return (
-    <div className="relative overflow-hidden rounded-xl">
+    <div className="relative overflow-hidden">
       <div
-        className="absolute right-0 top-0 bottom-0 w-16 bg-red-500 flex items-center justify-center text-white z-0"
+        className="absolute right-0 top-0 bottom-0 w-16 bg-newspaper-red flex items-center justify-center text-white z-0"
         onClick={(e) => {
           e.stopPropagation();
           deleteTask(task.id);
         }}
       >
-        <Trash2 size={16} />
+        <Trash2 size={14} />
       </div>
 
       <div
@@ -423,24 +423,24 @@ function SubTaskItem({ task }: { task: Task }) {
           transform: `translateX(${translateX}px)`,
           transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
-        className={`relative flex items-center gap-3 py-2 pl-1 pr-3 group z-10 bg-transparent ${
-          isSelected ? 'bg-green-50 dark:bg-green-950/20' : ''
+        className={`relative flex items-center gap-3 py-2.5 pl-1 pr-3 group z-10 bg-transparent border-b border-line-thin dark:border-gray-800/50 ${
+          isSelected ? 'bg-newspaper-red/5 dark:bg-newspaper-red/10' : ''
         }`}
       >
         <button
           onClick={handleCheckboxClick}
-          className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
+          className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
             multiSelectMode
               ? isSelected
-                ? 'bg-green-600 border-green-600'
-                : 'border-gray-300 dark:border-gray-500'
+                ? 'bg-ink-black border-ink-black'
+                : 'border-ink-light dark:border-gray-600'
               : task.status === 'completed'
-              ? 'bg-green-600 border-green-600'
-              : 'border-gray-300 dark:border-gray-500 group-hover:border-green-500'
+              ? 'bg-ink-black border-ink-black'
+              : 'border-ink-light dark:border-gray-600 group-hover:border-ink-gray dark:group-hover:border-gray-400'
           }`}
         >
           <Check
-            size={11}
+            size={10}
             className={`text-white transition-all duration-200 ${
               multiSelectMode
                 ? isSelected
@@ -455,21 +455,21 @@ function SubTaskItem({ task }: { task: Task }) {
 
         <div className="flex-1 min-w-0">
           <p
-            className={`text-sm transition-all duration-300 ${
+            className={`text-xs font-sans transition-all duration-300 ${
               task.status === 'completed' && !multiSelectMode
-                ? 'text-gray-400 dark:text-gray-500 line-through'
-                : 'text-gray-700 dark:text-gray-200'
+                ? 'text-ink-light dark:text-gray-600 line-through'
+                : 'text-ink-gray dark:text-gray-300'
             }`}
           >
             {task.title}
           </p>
           {task.dueDate && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1">
-              <Calendar size={10} />
+            <p className="text-[10px] text-ink-light dark:text-gray-500 mt-0.5 flex items-center gap-1 font-sans">
+              <Calendar size={9} />
               {formatDate(task.dueDate)}
               {task.aiGenerated && (
-                <span className="ml-1 flex items-center gap-0.5 text-purple-500 dark:text-purple-400">
-                  <Sparkles size={10} /> AI
+                <span className="ml-1 flex items-center gap-0.5 text-newspaper-red dark:text-newspaper-red-light">
+                  <Sparkles size={9} /> AI
                 </span>
               )}
             </p>

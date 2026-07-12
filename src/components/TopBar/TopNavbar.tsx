@@ -1,4 +1,4 @@
-import { Search, Moon, Sun, Settings, MoreVertical, Sparkles } from 'lucide-react';
+import { Search, Moon, Sun, Settings, Sparkles } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,61 +11,62 @@ export default function TopNavbar() {
     searchQuery,
     setSearchQuery,
     setShowSettings,
-    multiSelectMode,
-    toggleMultiSelect,
   } = useTaskStore();
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800">
-      <div className="px-5 pt-6 pb-3">
+    <div className="sticky top-0 z-30 bg-paper-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-line-separator dark:border-gray-800">
+      <div className="px-5 pt-5 pb-3">
         {!showSearch ? (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-green-500/20">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-newspaper-red flex items-center justify-center text-white font-serif font-bold text-sm">
                 T
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-                TaskFlow
-              </h1>
+              <div>
+                <h1 className="font-serif text-xl font-semibold text-ink-black dark:text-white tracking-tight leading-none">
+                  TaskFlow
+                </h1>
+                <div className="newspaper-accent-line mt-1" />
+              </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <button
                 onClick={() => navigate('/chat')}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all active:scale-95"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-newspaper-red dark:text-newspaper-red-light hover:bg-newspaper-red/5 dark:hover:bg-newspaper-red/10 transition-all active:scale-95"
               >
-                <Sparkles size={20} />
+                <Sparkles size={19} />
               </button>
               <button
                 onClick={() => setShowSearch(true)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-ink-gray dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
               >
-                <Search size={20} />
+                <Search size={19} />
               </button>
               <button
                 onClick={toggleTheme}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-ink-gray dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
               >
-                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+                {theme === 'light' ? <Moon size={19} /> : <Sun size={19} />}
               </button>
               <button
                 onClick={() => setShowSettings(true)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+                className="w-10 h-10 flex items-center justify-center rounded-full text-ink-gray dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
               >
-                <Settings size={20} />
+                <Settings size={19} />
               </button>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-light" />
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜索任务..."
-                className="w-full h-11 pl-11 pr-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500/30 transition-all"
+                className="w-full h-10 pl-10 pr-4 bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all text-sm"
               />
             </div>
             <button
@@ -73,7 +74,7 @@ export default function TopNavbar() {
                 setShowSearch(false);
                 setSearchQuery('');
               }}
-              className="px-4 h-11 text-green-600 dark:text-green-400 font-medium active:scale-95 transition-transform"
+              className="px-3 h-10 text-newspaper-red dark:text-newspaper-red-light font-medium text-sm active:scale-95 transition-transform"
             >
               取消
             </button>

@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Send,
   Plus,
-  Paperclip,
   Sparkles,
   ChevronDown,
   ChevronUp,
@@ -100,15 +99,15 @@ export default function ChatDetail() {
   if (!chat) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-paper-white dark:bg-gray-950 flex flex-col">
       <div className="hidden sm:flex min-h-screen items-center justify-center py-8 px-4">
-        <div className="relative w-full max-w-md h-[85vh] bg-white dark:bg-gray-900 rounded-[40px] shadow-2xl overflow-hidden border-8 border-gray-900 dark:border-gray-800">
-          <div className="absolute top-0 left-0 right-0 h-7 bg-white dark:bg-gray-900 z-40 flex items-center justify-between px-6">
-            <span className="text-xs font-semibold text-gray-900 dark:text-white">9:41</span>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-5 bg-gray-900 rounded-b-2xl" />
+        <div className="relative w-full max-w-md h-[85vh] bg-paper-cream dark:bg-gray-900 shadow-2xl overflow-hidden border border-line-separator dark:border-gray-800">
+          <div className="absolute top-0 left-0 right-0 h-7 bg-paper-cream dark:bg-gray-900 z-40 flex items-center justify-between px-6 border-b border-line-separator dark:border-gray-800">
+            <span className="text-[10px] font-medium text-ink-gray dark:text-gray-400">9:41</span>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-ink-black dark:bg-gray-700 rounded-b-sm" />
             <div className="flex gap-1 items-center">
-              <div className="w-4 h-2.5 border border-gray-900 dark:border-white rounded-sm relative">
-                <div className="absolute inset-0.5 bg-gray-900 dark:bg-white rounded-sm" />
+              <div className="w-3.5 h-2 border border-ink-black dark:border-gray-400 relative">
+                <div className="absolute inset-0.5 bg-ink-black dark:bg-gray-400" />
               </div>
             </div>
           </div>
@@ -138,8 +137,8 @@ export default function ChatDetail() {
               isLoading={isLoading}
             />
             {importToast.show && (
-              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 rounded-xl text-sm font-medium shadow-lg backdrop-blur-xl z-50 animate-[fadeInUp_0.3s_ease]">
-                ✓ 已导入 {importToast.count} 个任务
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-ink-black/90 dark:bg-white/90 text-paper-white dark:text-ink-black text-xs font-medium shadow-lg border border-line-separator z-50 animate-[fadeInUp_0.3s_ease]">
+                已导入 {importToast.count} 个任务
               </div>
             )}
           </div>
@@ -172,8 +171,8 @@ export default function ChatDetail() {
           isLoading={isLoading}
         />
         {importToast.show && (
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2.5 bg-gray-900/90 dark:bg-white/90 text-white dark:text-gray-900 rounded-xl text-sm font-medium shadow-lg backdrop-blur-xl z-50 animate-[fadeInUp_0.3s_ease]">
-            ✓ 已导入 {importToast.count} 个任务
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-ink-black/90 dark:bg-white/90 text-paper-white dark:text-ink-black text-xs font-medium shadow-lg border border-line-separator z-50 animate-[fadeInUp_0.3s_ease]">
+            已导入 {importToast.count} 个任务
           </div>
         )}
       </div>
@@ -191,26 +190,26 @@ function ChatHeader({
   onNewChat: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+    <div className="flex items-center justify-between px-4 py-2.5 border-b border-line-separator dark:border-gray-800 flex-shrink-0">
       <div className="flex items-center gap-2">
         <button
           onClick={onBack}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
         >
-          <ArrowLeft size={18} className="text-gray-600 dark:text-gray-300" />
+          <ArrowLeft size={16} className="text-ink-gray dark:text-gray-400" />
         </button>
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-          <Sparkles size={16} className="text-white" />
+        <div className="w-6 h-6 bg-newspaper-red flex items-center justify-center text-white">
+          <Sparkles size={12} />
         </div>
       </div>
-      <span className="font-semibold text-gray-900 dark:text-white text-sm truncate max-w-[180px]">
+      <span className="font-serif font-semibold text-ink-black dark:text-white text-sm truncate max-w-[180px]">
         {title}
       </span>
       <button
         onClick={onNewChat}
-        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+        className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
       >
-        <Plus size={18} className="text-gray-600 dark:text-gray-300" />
+        <Plus size={16} className="text-ink-gray dark:text-gray-400" />
       </button>
     </div>
   );
@@ -236,18 +235,18 @@ function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center mb-4 animate-[float_3s_ease-in-out_infinite]">
-          <Sparkles size={28} className="text-purple-500" />
+        <div className="w-14 h-14 border border-line-separator dark:border-gray-700 flex items-center justify-center mb-4 animate-[float_3s_ease-in-out_infinite]">
+          <Sparkles size={24} className="text-newspaper-red" />
         </div>
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-2">AI 任务助手</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+        <h3 className="font-serif font-semibold text-ink-black dark:text-white mb-2">AI 任务助手</h3>
+        <p className="text-xs text-ink-light dark:text-gray-400 text-center mb-6 font-sans">
           告诉我你的目标，我来帮你拆解成可执行的任务清单
         </p>
-        <div className="w-full space-y-2">
+        <div className="w-full space-y-1.5">
           {['我要学习一门新技能', '帮我规划一个项目', '制定健身计划'].map((q, i) => (
             <button
               key={q}
-              className="w-full text-left px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm text-gray-700 dark:text-gray-300 transition-all active:scale-[0.98]"
+              className="w-full text-left px-3 py-2.5 border border-line-separator dark:border-gray-700 hover:bg-paper-cream dark:hover:bg-gray-800 text-xs text-ink-gray dark:text-gray-300 transition-all active:scale-[0.99] font-sans"
               style={{ animation: `fadeInUp 0.5s ease ${i * 0.1}s both` }}
             >
               {q}
@@ -274,14 +273,14 @@ function MessageList({
       ))}
       {isLoading && (
         <div className="flex gap-3 animate-[fadeIn_0.3s_ease]">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-            <Sparkles size={14} className="text-white" />
+          <div className="w-7 h-7 bg-newspaper-red flex items-center justify-center flex-shrink-0">
+            <Sparkles size={12} className="text-white" />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+          <div className="bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 px-3 py-2.5">
             <div className="flex gap-1.5">
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="w-1.5 h-1.5 bg-newspaper-red rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-newspaper-red rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-newspaper-red rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         </div>
@@ -379,25 +378,25 @@ function MessageBubble({
       }}
     >
       <div
-        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+        className={`w-7 h-7 flex items-center justify-center flex-shrink-0 ${
           isUser
-            ? 'bg-blue-500'
-            : 'bg-gradient-to-br from-purple-500 to-pink-500'
+            ? 'bg-ink-black'
+            : 'bg-newspaper-red'
         }`}
       >
         {isUser ? (
-          <span className="text-white text-xs font-bold">我</span>
+          <span className="text-white text-[10px] font-bold font-sans">我</span>
         ) : (
-          <Sparkles size={14} className="text-white" />
+          <Sparkles size={12} className="text-white" />
         )}
       </div>
       <div className={`max-w-[82%] ${isUser ? 'items-end' : 'items-start'}`}>
         <div className="group relative">
           <div
-            className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words ${
+            className={`px-3.5 py-2.5 text-sm leading-relaxed break-words font-sans ${
               isUser
-                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-md shadow-sm'
-                : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-tl-md shadow-sm'
+                ? 'bg-ink-black text-paper-white'
+                : 'bg-paper-cream dark:bg-gray-800 text-ink-black dark:text-gray-200 border border-line-separator dark:border-gray-700'
             }`}
             dangerouslySetInnerHTML={{ __html: renderedContent }}
           />
@@ -406,25 +405,25 @@ function MessageBubble({
             <div className="flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={onCopy}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-[10px] text-ink-light dark:text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
                 {isCopied ? (
                   <>
-                    <CheckCheck size={12} className="text-green-500" />
-                    <span className="text-green-500">已复制</span>
+                    <CheckCheck size={10} className="text-newspaper-red" />
+                    <span className="text-newspaper-red">已复制</span>
                   </>
                 ) : (
                   <>
-                    <Copy size={12} />
+                    <Copy size={10} />
                     <span>复制</span>
                   </>
                 )}
               </button>
               <button
                 onClick={onRegenerate}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-[10px] text-ink-light dark:text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
-                <RefreshCw size={12} />
+                <RefreshCw size={10} />
                 <span>重新生成</span>
               </button>
             </div>
@@ -435,26 +434,26 @@ function MessageBubble({
           <div className="mt-2">
             <button
               onClick={() => setShowTasks(!showTasks)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all w-full ${
+              className={`flex items-center gap-2 px-3 py-2 text-[10px] font-medium transition-all w-full border ${
                 isUser
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'bg-purple-50 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300'
-              } hover:shadow-sm active:scale-[0.98]`}
+                  ? 'bg-ink-black/5 text-ink-black dark:bg-white/5 dark:text-gray-300 border-line-separator dark:border-gray-700'
+                  : 'bg-newspaper-red/5 text-newspaper-red dark:bg-newspaper-red/10 dark:text-newspaper-red-light border-newspaper-red/20 dark:border-newspaper-red/30'
+              } hover:shadow-sm active:scale-[0.99]`}
             >
-              <ListTodo size={14} />
+              <ListTodo size={12} />
               <span>任务清单 ({message.suggestedTasks!.length} 组 / 共 {totalTaskCount} 项</span>
-              {showTasks ? <ChevronUp size={14} className="ml-auto" /> : <ChevronDown size={14} className="ml-auto" />}
+              {showTasks ? <ChevronUp size={12} className="ml-auto" /> : <ChevronDown size={12} className="ml-auto" />}
             </button>
 
             {showTasks && (
-              <div className="mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-100 dark:border-gray-700 animate-[fadeIn_0.25s_ease]">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
-                  <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <div className="mt-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 overflow-hidden animate-[fadeIn_0.25s_ease]">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-line-separator dark:border-gray-700 bg-paper-cream dark:bg-gray-750">
+                  <label className="flex items-center gap-2 text-[10px] text-ink-gray dark:text-gray-300 font-sans">
                     <input
                       type="checkbox"
                       checked={selectedCount === totalTaskCount}
                       onChange={toggleAll}
-                      className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500"
+                      className="w-3.5 h-3.5 border-ink-light text-newspaper-red focus:ring-newspaper-red"
                     />
                     全选 ({selectedCount}/{totalTaskCount}
                   </label>
@@ -464,17 +463,17 @@ function MessageBubble({
                   selectedIds={selectedTaskIds}
                   onToggle={toggleTask}
                 />
-                <div className="p-3 border-t border-gray-100 dark:border-gray-700">
+                <div className="p-3 border-t border-line-separator dark:border-gray-700">
                   <button
                     onClick={() => onImport(message.suggestedTasks!, selectedTaskIds)}
                     disabled={selectedCount === 0}
-                    className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-medium transition-all ${
                       selectedCount > 0
-                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white active:scale-[0.98]'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                        ? 'bg-ink-black hover:bg-newspaper-red text-paper-white active:scale-[0.99]'
+                        : 'bg-line-separator dark:bg-gray-700 text-ink-light cursor-not-allowed'
                     }`}
                   >
-                    <Download size={16} />
+                    <Download size={14} />
                     导入 {selectedCount} 个任务
                   </button>
                 </div>
@@ -498,34 +497,34 @@ function TaskPreview({
   onToggle: (id: number) => void;
   depth?: number;
 }) {
-  const priorityColors = {
-    1: 'bg-red-500',
-    2: 'bg-yellow-500',
-    3: 'bg-blue-500',
+  const priorityColors: Record<number, string> = {
+    1: 'bg-priority-high',
+    2: 'bg-priority-medium',
+    3: 'bg-priority-low',
   };
 
   return (
-    <div className="divide-y divide-gray-100 dark:divide-gray-700">
+    <div className="divide-y divide-line-thin dark:divide-gray-700">
       {tasks.map((task) => (
         <div key={task.id}>
           <label
-            className={`flex items-start gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
-          depth > 0 ? 'pl-10' : ''
-        }`}
+            className={`flex items-start gap-3 px-3 py-2 hover:bg-paper-cream dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+              depth > 0 ? 'pl-8' : ''
+            }`}
           >
             <input
               type="checkbox"
               checked={selectedIds.has(task.id)}
               onChange={() => onToggle(task.id)}
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 flex-shrink-0"
+              className="mt-0.5 w-3.5 h-3.5 border-ink-light text-newspaper-red focus:ring-newspaper-red flex-shrink-0"
             />
-            <div className={`mt-1 w-1 h-4 rounded-full ${priorityColors[task.priority]} flex-shrink-0`} />
+            <div className={`mt-1 w-0.5 h-3.5 ${priorityColors[task.priority]} flex-shrink-0`} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
+              <p className="text-xs font-medium text-ink-black dark:text-white font-sans">
                 {task.title}
               </p>
               {task.description && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[10px] text-ink-light dark:text-gray-400 mt-0.5 font-sans">
                   {task.description}
                 </p>
               )}
@@ -568,10 +567,10 @@ function InputBar({
   }, [input]);
 
   return (
-    <div className="border-t border-gray-100 dark:border-gray-800 p-3 flex-shrink-0 bg-white dark:bg-gray-900">
+    <div className="border-t border-line-separator dark:border-gray-800 p-3 flex-shrink-0 bg-paper-white dark:bg-gray-900">
       <div className="flex items-end gap-2">
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 flex-shrink-0">
-          <Paperclip size={20} className="text-gray-500" />
+        <button className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 flex-shrink-0">
+          <Mic size={18} className="text-ink-light" />
         </button>
         <div className="flex-1 relative">
           <textarea
@@ -581,21 +580,21 @@ function InputBar({
             onKeyDown={onKeyDown}
             placeholder="说说你的目标..."
             rows={1}
-            className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-500 outline-none resize-none max-h-32"
-            style={{ minHeight: '42px' }}
+            className="w-full px-3 py-2 bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 resize-none max-h-32 font-sans"
+            style={{ minHeight: '38px' }}
           />
         </div>
         {input.trim() ? (
           <button
             onClick={onSend}
             disabled={isLoading}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transition-all active:scale-95 flex-shrink-0 shadow-md"
+            className="w-9 h-9 flex items-center justify-center bg-newspaper-red hover:bg-newspaper-red-dark text-paper-white transition-all active:scale-95 flex-shrink-0 shadow-sm"
           >
-            <Send size={18} />
+            <Send size={16} />
           </button>
         ) : (
-          <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 flex-shrink-0">
-            <Mic size={20} className="text-gray-500" />
+          <button className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 flex-shrink-0">
+            <Mic size={18} className="text-ink-light" />
           </button>
         )}
       </div>
@@ -607,14 +606,14 @@ function renderMarkdown(text: string): string {
   let html = text
     .replace(/```json[\s\S]*?```/g, '')
     .replace(/```([\s\S]*?)```/g, (_, code) => {
-      return `<pre class="mt-2 p-3 rounded-lg bg-gray-900 dark:bg-gray-950 text-xs text-gray-300 overflow-x-auto"><code>${escapeHtml(code.trim())}</code></pre>`;
+      return `<pre class="mt-2 p-3 bg-ink-black dark:bg-gray-950 text-xs text-gray-300 overflow-x-auto border border-line-separator"><code>${escapeHtml(code.trim())}</code></pre>`;
     })
-    .replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-pink-500 text-xs font-mono">$1</code>');
+    .replace(/`([^`]+)`/g, '<code class="px-1 py-0.5 bg-paper-cream dark:bg-gray-700 text-newspaper-red text-xs font-mono border border-line-separator">$1</code>');
 
   html = html
-    .replace(/^### (.+)$/gm, '<h3 class="font-bold text-base mt-3 mb-2">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="font-bold text-lg mt-4 mb-2">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="font-bold text-xl mt-4 mb-2">$1</h1>');
+    .replace(/^### (.+)$/gm, '<h3 class="font-serif font-semibold text-sm mt-3 mb-2">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="font-serif font-semibold text-base mt-4 mb-2">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 class="font-serif font-semibold text-lg mt-4 mb-2">$1</h1>');
 
   html = html
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold">$1</strong>')

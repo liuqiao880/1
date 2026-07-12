@@ -12,13 +12,13 @@ export default function TaskList() {
   if (groups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-6">
-        <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-          <Inbox size={32} className="text-gray-400" />
+        <div className="w-16 h-16 border border-line-separator dark:border-gray-700 flex items-center justify-center mb-4">
+          <Inbox size={28} className="text-ink-light" />
         </div>
-        <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <h3 className="font-serif text-base font-semibold text-ink-gray dark:text-gray-300 mb-1">
           {searchQuery ? '没有找到相关任务' : '暂无任务'}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+        <p className="text-xs text-ink-light dark:text-gray-500 text-center font-sans">
           {searchQuery ? '换个关键词试试吧' : '点击右下角 + 号添加你的第一个任务'}
         </p>
       </div>

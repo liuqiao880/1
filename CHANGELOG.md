@@ -6,6 +6,58 @@
 
 ---
 
+## [v0.5.0] - 2026-07-12
+
+### 🎨 报纸风格美术升级 `[Web✅ Android✅]`
+
+借鉴《纽约时报》《金融时报》等高级报纸的设计语言，全面升级 UI 风格：
+
+#### 配色
+- 主色：NewspaperRed (#C41E3A) — 标志性报纸红
+- 文字层次：InkBlack / InkGray / InkLight — 墨色三级灰阶
+- 背景：PaperWhite (#FAFAFA) / PaperCream (#FDFBF7) — 纸张质感
+- 分隔线：LineSeparator (#E0E0E0) — 细线分隔
+- 优先级：紧急=红 / 普通=暗金(#B8860B) / 低优=钢蓝(#4682B4)
+
+#### 排版
+- 标题字体：Georgia / Serif 系列（font-serif）
+- 正文字体：PingFang SC / Sans-serif 系列（font-sans）
+- 标题用 Serif + SemiBold，正文用 Sans + Regular
+
+#### 形状与装饰
+- 圆角缩小为 4-8dp，更克制精致
+- 复选框：描边圆形（border + transparent）代替实心填充
+- 红色短线条前缀装饰（newspaper-accent-line）
+- 细边框分隔代替大间距 Card
+- FAB 按钮：方形代替圆形，hover 变红
+
+#### 组件变更
+- TopNavbar：红色方块 Logo + Serif 标题 + 红色短线装饰
+- FilterTabs：墨黑填充选中态 + 底部细线
+- TaskGroup：红色短线前缀 + Serif 大写标题 + 数字计数
+- TaskItem：列表项+细线分隔（去掉 Card 阴影），0.5px 优先级色条
+- ChatList/ChatDetail：红色方块图标 + Serif 标题 + 细线分隔列表
+- PomodoroPanel：报纸红主色调 + Serif 字体计时
+
+### 📱 Android 端
+- Theme.kt / Typography.kt / Shapes.kt 全部重写为报纸风格
+- TopAppBar / TaskList / PomodoroPanel 样式同步升级
+- 数据库版本升至 v4（ChatMessageEntity 新增 ForeignKey/Index）
+
+### 🌐 Web 端
+- tailwind.config.js 新增 newspaper / ink / paper / line / priority 色板 + serif/sans 字体族
+- index.css 新增报纸风格装饰线类 + Serif 字体规则
+- TopNavbar / FilterTabs / TaskGroup / TaskItem / TaskList / FAB 全部重写
+- ChatList / ChatDetail / PomodoroPanel 报纸风格适配
+- Home 页面：桌面端外框改为报纸版面风格（细边框 + 方形刘海）
+
+### 🔧 优化
+- 修复 60+ 项代码质量问题（闪退、编译错误、Hilt 注入、协程泄漏等）
+- 响应式架构：MutableStateFlow + flatMapLatest 替代命令式加载
+- ChatMessageEntity Gson 序列化修复（suggestedTasks 不再为 null）
+
+---
+
 ## [v0.4.0] - 2026-07-11
 
 ### ✨ 新增

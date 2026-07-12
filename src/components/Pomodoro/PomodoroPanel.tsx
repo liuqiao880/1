@@ -68,9 +68,9 @@ export default function PomodoroPanel() {
   }[phase];
 
   const phaseColor = {
-    focus: 'bg-red-500',
-    shortBreak: 'bg-green-500',
-    longBreak: 'bg-blue-500',
+    focus: 'bg-newspaper-red',
+    shortBreak: 'bg-ink-black',
+    longBreak: 'bg-priority-low',
   }[phase];
 
   const progress = () => {
@@ -85,25 +85,25 @@ export default function PomodoroPanel() {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fadeIn"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
         onClick={() => setShowPanel(false)}
       />
-      <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-t-3xl shadow-2xl animate-slideUp pb-8">
+      <div className="relative w-full max-w-md bg-paper-cream dark:bg-gray-900 shadow-2xl animate-slideUp pb-8 border-t border-line-separator dark:border-gray-800">
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
           <div className="flex items-center gap-2">
-            <Timer size={20} className="text-red-500" />
-            <span className="font-semibold text-gray-900 dark:text-white">番茄钟</span>
+            <Timer size={18} className="text-newspaper-red" />
+            <span className="font-serif font-semibold text-ink-black dark:text-white">番茄钟</span>
           </div>
           <button
             onClick={() => setShowPanel(false)}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-8 h-8 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
-            <X size={18} className="text-gray-500" />
+            <X size={16} className="text-ink-light" />
           </button>
         </div>
 
         <div className="px-6 pt-2 pb-6">
-          <div className={`inline-block px-3 py-1 rounded-full ${phaseColor} text-white text-xs font-medium mb-6`}>
+          <div className={`inline-block px-2.5 py-1 ${phaseColor} text-white text-[10px] font-medium mb-6`}>
             {phaseLabel}
           </div>
 
@@ -115,29 +115,29 @@ export default function PomodoroPanel() {
                   cy="130"
                   r="120"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="none"
-                  className="text-gray-100 dark:text-gray-800"
+                  className="text-line-separator dark:text-gray-800"
                 />
                 <circle
                   cx="130"
                   cy="130"
                   r="120"
                   stroke="currentColor"
-                  strokeWidth="8"
+                  strokeWidth="6"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
-                  className={phase === 'focus' ? 'text-red-500' : phase === 'shortBreak' ? 'text-green-500' : 'text-blue-500'}
+                  className={phase === 'focus' ? 'text-newspaper-red' : phase === 'shortBreak' ? 'text-ink-black' : 'text-priority-low'}
                   style={{ transition: 'stroke-dashoffset 1s linear' }}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-bold text-gray-900 dark:text-white tabular-nums">
+                <span className="text-5xl font-serif font-bold text-ink-black dark:text-white tabular-nums">
                   {timeStr}
                 </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <span className="text-xs text-ink-light dark:text-gray-400 mt-2 font-sans">
                   今日已完成 {completedPomodoros} 个番茄
                 </span>
               </div>
@@ -145,8 +145,8 @@ export default function PomodoroPanel() {
 
             {taskTitle && (
               <div className="mt-6 text-center">
-                <p className="text-sm text-gray-500 dark:text-gray-400">当前任务</p>
-                <p className="font-medium text-gray-900 dark:text-white mt-1 line-clamp-2 max-w-xs">
+                <p className="text-xs text-ink-light dark:text-gray-400 font-sans">当前任务</p>
+                <p className="font-serif font-medium text-ink-black dark:text-white mt-1 line-clamp-2 max-w-xs text-sm">
                   {taskTitle}
                 </p>
               </div>
@@ -155,33 +155,33 @@ export default function PomodoroPanel() {
             <div className="flex items-center gap-6 mt-8">
               <button
                 onClick={reset}
-                className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="w-11 h-11 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
-                <RotateCcw size={20} className="text-gray-600 dark:text-gray-300" />
+                <RotateCcw size={18} className="text-ink-gray dark:text-gray-400" />
               </button>
 
               <button
                 onClick={() => status === 'running' ? pause() : resume()}
-                className={`w-16 h-16 flex items-center justify-center rounded-full transition-all ${
+                className={`w-14 h-14 flex items-center justify-center transition-all text-white shadow-lg ${
                   phase === 'focus'
-                    ? 'bg-red-500 hover:bg-red-600'
+                    ? 'bg-newspaper-red hover:bg-newspaper-red-dark'
                     : phase === 'shortBreak'
-                    ? 'bg-green-500 hover:bg-green-600'
-                    : 'bg-blue-500 hover:bg-blue-600'
-                } text-white shadow-lg`}
+                    ? 'bg-ink-black hover:bg-ink-gray'
+                    : 'bg-priority-low hover:bg-priority-low/80'
+                }`}
               >
-                {status === 'running' ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
+                {status === 'running' ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" className="ml-1" />}
               </button>
 
               <button
                 onClick={skip}
-                className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="w-11 h-11 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               >
-                <SkipForward size={20} className="text-gray-600 dark:text-gray-300" />
+                <SkipForward size={18} className="text-ink-gray dark:text-gray-400" />
               </button>
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex gap-3 mt-6">
               {(['focus', 'shortBreak', 'longBreak'] as const).map((p) => (
                 <button
                   key={p}
@@ -192,14 +192,14 @@ export default function PomodoroPanel() {
                     if (p === 'longBreak') duration = store.longBreakDuration;
                     usePomodoroStore.setState({ phase: p, timeLeft: duration, status: 'idle' });
                   }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 text-xs font-medium font-sans transition-colors ${
                     phase === p
                       ? p === 'focus'
-                        ? 'bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400'
+                        ? 'bg-newspaper-red/10 text-newspaper-red dark:bg-newspaper-red/20 dark:text-newspaper-red-light'
                         : p === 'shortBreak'
-                        ? 'bg-green-100 text-green-600 dark:bg-green-950/50 dark:text-green-400'
-                        : 'bg-blue-100 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                        ? 'bg-ink-black/10 text-ink-black dark:bg-white/10 dark:text-gray-300'
+                        : 'bg-priority-low/10 text-priority-low dark:bg-priority-low/20'
+                      : 'text-ink-light dark:text-gray-500 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
                   {p === 'focus' ? '专注' : p === 'shortBreak' ? '短休' : '长休'}

@@ -7,13 +7,14 @@ interface TaskGroupProps {
 
 export default function TaskGroupView({ group }: TaskGroupProps) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+    <div className="mb-5">
+      <div className="flex items-center gap-2.5 mb-2.5 px-1">
+        <div className="newspaper-accent-line" />
+        <h2 className="font-serif text-xs font-semibold text-ink-gray dark:text-gray-400 uppercase tracking-wider">
           {group.label}
         </h2>
-        <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
-          {group.tasks.length} 项
+        <span className="text-xs text-ink-light dark:text-gray-500 font-sans tabular-nums">
+          {group.tasks.length}
         </span>
       </div>
       <div>
