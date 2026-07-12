@@ -428,17 +428,17 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_taskflow_app_ui_screen_chat_ChatListViewModel = "com.taskflow.app.ui.screen.chat.ChatListViewModel";
-
       static String com_taskflow_app_ui_screen_home_HomeViewModel = "com.taskflow.app.ui.screen.home.HomeViewModel";
+
+      static String com_taskflow_app_ui_screen_chat_ChatListViewModel = "com.taskflow.app.ui.screen.chat.ChatListViewModel";
 
       static String com_taskflow_app_ui_screen_chat_ChatDetailViewModel = "com.taskflow.app.ui.screen.chat.ChatDetailViewModel";
 
       @KeepFieldType
-      ChatListViewModel com_taskflow_app_ui_screen_chat_ChatListViewModel2;
+      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
+      ChatListViewModel com_taskflow_app_ui_screen_chat_ChatListViewModel2;
 
       @KeepFieldType
       ChatDetailViewModel com_taskflow_app_ui_screen_chat_ChatDetailViewModel2;
@@ -480,6 +480,10 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
       return new CreateChatUseCase(singletonCImpl.bindChatRepositoryProvider.get());
     }
 
+    private AddTasksUseCase addTasksUseCase() {
+      return new AddTasksUseCase(singletonCImpl.bindTaskRepositoryProvider.get());
+    }
+
     private GetAllChatsUseCase getAllChatsUseCase() {
       return new GetAllChatsUseCase(singletonCImpl.bindChatRepositoryProvider.get());
     }
@@ -498,10 +502,6 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     private AddTaskUseCase addTaskUseCase() {
       return new AddTaskUseCase(singletonCImpl.bindTaskRepositoryProvider.get());
-    }
-
-    private AddTasksUseCase addTasksUseCase() {
-      return new AddTasksUseCase(singletonCImpl.bindTaskRepositoryProvider.get());
     }
 
     private UpdateTaskUseCase updateTaskUseCase() {
@@ -544,17 +544,17 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
-      static String com_taskflow_app_ui_screen_chat_ChatDetailViewModel = "com.taskflow.app.ui.screen.chat.ChatDetailViewModel";
-
       static String com_taskflow_app_ui_screen_home_HomeViewModel = "com.taskflow.app.ui.screen.home.HomeViewModel";
+
+      static String com_taskflow_app_ui_screen_chat_ChatDetailViewModel = "com.taskflow.app.ui.screen.chat.ChatDetailViewModel";
 
       static String com_taskflow_app_ui_screen_chat_ChatListViewModel = "com.taskflow.app.ui.screen.chat.ChatListViewModel";
 
       @KeepFieldType
-      ChatDetailViewModel com_taskflow_app_ui_screen_chat_ChatDetailViewModel2;
+      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
+      ChatDetailViewModel com_taskflow_app_ui_screen_chat_ChatDetailViewModel2;
 
       @KeepFieldType
       ChatListViewModel com_taskflow_app_ui_screen_chat_ChatListViewModel2;
@@ -582,7 +582,7 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.taskflow.app.ui.screen.chat.ChatDetailViewModel 
-          return (T) new ChatDetailViewModel(viewModelCImpl.getChatMessagesUseCase(), viewModelCImpl.sendChatMessageUseCase(), viewModelCImpl.createChatUseCase());
+          return (T) new ChatDetailViewModel(viewModelCImpl.getChatMessagesUseCase(), viewModelCImpl.sendChatMessageUseCase(), viewModelCImpl.createChatUseCase(), viewModelCImpl.addTasksUseCase());
 
           case 1: // com.taskflow.app.ui.screen.chat.ChatListViewModel 
           return (T) new ChatListViewModel(viewModelCImpl.getAllChatsUseCase(), viewModelCImpl.createChatUseCase(), viewModelCImpl.deleteChatUseCase());

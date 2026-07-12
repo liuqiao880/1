@@ -1,5 +1,6 @@
 package com.taskflow.app.ui.screen.chat;
 
+import com.taskflow.app.domain.usecase.AddTasksUseCase;
 import com.taskflow.app.domain.usecase.CreateChatUseCase;
 import com.taskflow.app.domain.usecase.GetChatMessagesUseCase;
 import com.taskflow.app.domain.usecase.SendChatMessageUseCase;
@@ -31,29 +32,35 @@ public final class ChatDetailViewModel_Factory implements Factory<ChatDetailView
 
   private final Provider<CreateChatUseCase> createChatUseCaseProvider;
 
+  private final Provider<AddTasksUseCase> addTasksUseCaseProvider;
+
   public ChatDetailViewModel_Factory(
       Provider<GetChatMessagesUseCase> getChatMessagesUseCaseProvider,
       Provider<SendChatMessageUseCase> sendChatMessageUseCaseProvider,
-      Provider<CreateChatUseCase> createChatUseCaseProvider) {
+      Provider<CreateChatUseCase> createChatUseCaseProvider,
+      Provider<AddTasksUseCase> addTasksUseCaseProvider) {
     this.getChatMessagesUseCaseProvider = getChatMessagesUseCaseProvider;
     this.sendChatMessageUseCaseProvider = sendChatMessageUseCaseProvider;
     this.createChatUseCaseProvider = createChatUseCaseProvider;
+    this.addTasksUseCaseProvider = addTasksUseCaseProvider;
   }
 
   @Override
   public ChatDetailViewModel get() {
-    return newInstance(getChatMessagesUseCaseProvider.get(), sendChatMessageUseCaseProvider.get(), createChatUseCaseProvider.get());
+    return newInstance(getChatMessagesUseCaseProvider.get(), sendChatMessageUseCaseProvider.get(), createChatUseCaseProvider.get(), addTasksUseCaseProvider.get());
   }
 
   public static ChatDetailViewModel_Factory create(
       Provider<GetChatMessagesUseCase> getChatMessagesUseCaseProvider,
       Provider<SendChatMessageUseCase> sendChatMessageUseCaseProvider,
-      Provider<CreateChatUseCase> createChatUseCaseProvider) {
-    return new ChatDetailViewModel_Factory(getChatMessagesUseCaseProvider, sendChatMessageUseCaseProvider, createChatUseCaseProvider);
+      Provider<CreateChatUseCase> createChatUseCaseProvider,
+      Provider<AddTasksUseCase> addTasksUseCaseProvider) {
+    return new ChatDetailViewModel_Factory(getChatMessagesUseCaseProvider, sendChatMessageUseCaseProvider, createChatUseCaseProvider, addTasksUseCaseProvider);
   }
 
   public static ChatDetailViewModel newInstance(GetChatMessagesUseCase getChatMessagesUseCase,
-      SendChatMessageUseCase sendChatMessageUseCase, CreateChatUseCase createChatUseCase) {
-    return new ChatDetailViewModel(getChatMessagesUseCase, sendChatMessageUseCase, createChatUseCase);
+      SendChatMessageUseCase sendChatMessageUseCase, CreateChatUseCase createChatUseCase,
+      AddTasksUseCase addTasksUseCase) {
+    return new ChatDetailViewModel(getChatMessagesUseCase, sendChatMessageUseCase, createChatUseCase, addTasksUseCase);
   }
 }
