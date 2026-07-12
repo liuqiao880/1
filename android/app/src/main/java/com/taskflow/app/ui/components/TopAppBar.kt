@@ -1,6 +1,5 @@
 package com.taskflow.app.ui.components
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -23,6 +21,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -34,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.ThemeType
+import com.taskflow.app.ui.theme.NewspaperRed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,28 +67,29 @@ fun TopAppBar(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primary),
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(NewspaperRed),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "T",
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = "TaskFlow",
-                        fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             },
             actions = {
                 IconButton(onClick = onChatClick) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI 对话", tint = Color(0xFFA855F7))
+                    Icon(Icons.Default.AutoAwesome, contentDescription = "AI 对话", tint = NewspaperRed)
                 }
                 IconButton(onClick = { onSearchActiveChange(true) }) {
                     Icon(Icons.Default.Search, contentDescription = "搜索")
@@ -99,7 +100,10 @@ fun TopAppBar(
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background
-            )
+            ),
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .clip(RoundedCornerShape(4.dp))
         )
     }
 }
@@ -111,15 +115,16 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit,
     onClose: () -> Unit
 ) {
-    androidx.compose.material3.TopAppBar(
+    TopAppBar(
         title = {
-            androidx.compose.material3.OutlinedTextField(
+            OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
                 placeholder = { Text("搜索任务...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(4.dp)
             )
         },
         navigationIcon = {
@@ -129,6 +134,9 @@ private fun SearchBar(
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background
-        )
+        ),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
+
+

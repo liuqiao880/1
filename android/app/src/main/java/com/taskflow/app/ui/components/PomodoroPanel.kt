@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taskflow.app.domain.model.PomodoroPhase
 import com.taskflow.app.domain.model.PomodoroState
-import com.taskflow.app.ui.theme.RedPriority
+import com.taskflow.app.ui.theme.NewspaperRed
 
 @Composable
 fun PomodoroPanel(
@@ -60,7 +60,7 @@ fun PomodoroPanel(
         modifier = modifier
     ) {
         val phaseColor = when (state.phase) {
-            PomodoroPhase.FOCUS -> RedPriority
+            PomodoroPhase.FOCUS -> NewspaperRed
             PomodoroPhase.SHORT_BREAK -> Color(0xFF22C55E)
             PomodoroPhase.LONG_BREAK -> Color(0xFF3B82F6)
         }
@@ -151,7 +151,7 @@ fun PomodoroPanel(
                         Icons.Default.Timer,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = RedPriority
+                        tint = NewspaperRed
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(

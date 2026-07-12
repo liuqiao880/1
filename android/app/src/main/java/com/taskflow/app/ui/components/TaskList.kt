@@ -3,6 +3,7 @@ package com.taskflow.app.ui.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,8 +26,6 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +44,7 @@ import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.TaskPriority
 import com.taskflow.app.domain.model.TaskStatus
-import com.taskflow.app.ui.theme.BluePriority
-import com.taskflow.app.ui.theme.RedPriority
-import com.taskflow.app.ui.theme.YellowPriority
+import com.taskflow.app.ui.theme.NewspaperRed
 import com.taskflow.app.util.DateUtils
 
 @Composable
@@ -76,7 +73,7 @@ fun TaskList(
                 TaskGroupHeader(title = groupName, count = tasks.size)
             }
             item(key = "spacer_$groupName") {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
             }
             itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
                 TaskItem(
@@ -91,11 +88,12 @@ fun TaskList(
                     onDelete = { onDeleteTask(task.id) },
                     onStartPomodoro = { onStartPomodoro(task) },
                     onChildClick = onChildClick,
-                    onChildChecked = onChildChecked
+                    onChildChecked = onChildChecked,
+                    showTopDivider = index > 0
                 )
             }
             item(key = "bottom_spacer_$groupName") {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -106,22 +104,29 @@ fun TaskGroupHeader(title: String, count: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        Box(
+            modifier = Modifier
+                .width(32.dp)
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.primary)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = "$count 项",
+            text = "$count",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(4.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
                 .padding(horizontal = 8.dp, vertical = 2.dp)
         )
@@ -142,51 +147,37 @@ fun TaskItem(
     onStartPomodoro: () -> Unit,
     onChildClick: (Task) -> Unit,
     onChildChecked: (Int) -> Unit,
+    showTopDivider: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val priorityColor = when (task.priority) {
-        TaskPriority.HIGH -> RedPriority
-        TaskPriority.MEDIUM -> YellowPriority
-        TaskPriority.LOW -> BluePriority
-    }
-
     val isCompleted = task.status == TaskStatus.COMPLETED
     val rotation by animateFloatAsState(if (isExpanded) 180f else 0f, label = "expand")
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
+    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
+        if (showTopDivider) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(16.dp),
+                .padding(vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Priority indicator
-            Box(
-                modifier = Modifier
-                    .size(4.dp, 48.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(priorityColor)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Checkbox
             CheckBox(
                 checked = if (multiSelectMode) isSelected else isCompleted,
                 onCheckedChange = { onCheckedChange() }
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(16.dp))
 
-            // Content
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = task.title,
@@ -196,11 +187,11 @@ fun TaskItem(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     else
                         MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -211,7 +202,7 @@ fun TaskItem(
                             Icon(
                                 Icons.Default.CalendarToday,
                                 contentDescription = null,
-                                modifier = Modifier.size(14.dp),
+                                modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -231,69 +222,38 @@ fun TaskItem(
                                 Icons.Default.AutoAwesome,
                                 contentDescription = null,
                                 modifier = Modifier.size(12.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = NewspaperRed
                             )
-                            Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text(
                                 text = "AI",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = NewspaperRed,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
-                    if (!multiSelectMode) {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(
-                                    if (task.pomodoroCount > 0)
-                                        RedPriority.copy(alpha = 0.12f)
-                                    else
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-                                )
-                                .clickable { onStartPomodoro() }
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.Timer,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(11.dp),
-                                    tint = if (task.pomodoroCount > 0) RedPriority
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text(
-                                    text = if (task.pomodoroCount > 0) "${task.pomodoroCount}" else "开始",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (task.pomodoroCount > 0) RedPriority
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    if (task.children.isNotEmpty()) {
+                    if (!multiSelectMode && task.pomodoroCount > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            LinearProgressIndicator(
-                                progress = { task.progress },
-                                modifier = Modifier.width(60.dp),
+                            Icon(
+                                Icons.Default.Timer,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = NewspaperRed
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = "${(task.progress * 100).toInt()}%",
+                                text = "${task.pomodoroCount}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = NewspaperRed,
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
                 }
             }
 
-            // Expand arrow
             if (task.children.isNotEmpty()) {
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
@@ -305,12 +265,17 @@ fun TaskItem(
             }
         }
 
-        // Children
         if (task.children.isNotEmpty() && isExpanded) {
             Column(
                 modifier = Modifier
-                    .padding(start = 48.dp, end = 16.dp, bottom = 12.dp)
+                    .padding(start = 40.dp, top = 8.dp, bottom = 8.dp)
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                )
                 task.children.forEach { child ->
                     SubTaskItem(
                         task = child,
@@ -339,15 +304,15 @@ fun SubTaskItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         CheckBox(
             checked = if (multiSelectMode) isSelected else isCompleted,
             onCheckedChange = { onCheckedChange() },
-            size = 18.dp
+            size = 20.dp
         )
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = task.title,
@@ -384,7 +349,13 @@ fun CheckBox(
             .clip(CircleShape)
             .background(
                 if (checked) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                else Color.Transparent
+            )
+            .border(
+                width = 2.dp,
+                color = if (checked) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                shape = CircleShape
             )
             .clickable { onCheckedChange() },
         contentAlignment = Alignment.Center
@@ -394,7 +365,7 @@ fun CheckBox(
                 Icons.Default.Check,
                 contentDescription = null,
                 tint = Color.White,
-                modifier = Modifier.size(size * 0.6f)
+                modifier = Modifier.size(size * 0.55f)
             )
         }
     }
@@ -403,9 +374,9 @@ fun CheckBox(
 @Composable
 fun PriorityBadge(priority: TaskPriority) {
     val color = when (priority) {
-        TaskPriority.HIGH -> RedPriority
-        TaskPriority.MEDIUM -> YellowPriority
-        TaskPriority.LOW -> BluePriority
+        TaskPriority.HIGH -> NewspaperRed
+        TaskPriority.MEDIUM -> Color(0xFFB8860B)
+        TaskPriority.LOW -> Color(0xFF4682B4)
     }
     val label = when (priority) {
         TaskPriority.HIGH -> "紧急"
@@ -416,9 +387,9 @@ fun PriorityBadge(priority: TaskPriority) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .clip(CircleShape)
-            .background(color.copy(alpha = 0.1f))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(color.copy(alpha = 0.08f))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Icon(
             Icons.Default.Flag,
@@ -430,7 +401,8 @@ fun PriorityBadge(priority: TaskPriority) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = color
+            color = color,
+            fontWeight = FontWeight.Medium
         )
     }
 }
