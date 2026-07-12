@@ -6,6 +6,7 @@ import android.view.View;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.taskflow.app.data.local.TaskDatabase;
 import com.taskflow.app.data.local.dao.ChatDao;
 import com.taskflow.app.data.local.dao.TaskDao;
@@ -391,6 +392,7 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     @Override
     public void injectMainActivity(MainActivity mainActivity) {
+      injectMainActivity2(mainActivity);
     }
 
     @Override
@@ -418,22 +420,28 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
       return new ViewCBuilder(singletonCImpl, activityRetainedCImpl, activityCImpl);
     }
 
+    @CanIgnoreReturnValue
+    private MainActivity injectMainActivity2(MainActivity instance) {
+      MainActivity_MembersInjector.injectPreferencesRepository(instance, singletonCImpl.bindPreferencesRepositoryProvider.get());
+      return instance;
+    }
+
     @IdentifierNameString
     private static final class LazyClassKeyProvider {
       static String com_taskflow_app_ui_screen_chat_ChatListViewModel = "com.taskflow.app.ui.screen.chat.ChatListViewModel";
 
-      static String com_taskflow_app_ui_screen_chat_ChatDetailViewModel = "com.taskflow.app.ui.screen.chat.ChatDetailViewModel";
-
       static String com_taskflow_app_ui_screen_home_HomeViewModel = "com.taskflow.app.ui.screen.home.HomeViewModel";
+
+      static String com_taskflow_app_ui_screen_chat_ChatDetailViewModel = "com.taskflow.app.ui.screen.chat.ChatDetailViewModel";
 
       @KeepFieldType
       ChatListViewModel com_taskflow_app_ui_screen_chat_ChatListViewModel2;
 
       @KeepFieldType
-      ChatDetailViewModel com_taskflow_app_ui_screen_chat_ChatDetailViewModel2;
+      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
 
       @KeepFieldType
-      HomeViewModel com_taskflow_app_ui_screen_home_HomeViewModel2;
+      ChatDetailViewModel com_taskflow_app_ui_screen_chat_ChatDetailViewModel2;
     }
   }
 
@@ -662,6 +670,10 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     private final SingletonCImpl singletonCImpl = this;
 
+    private Provider<PreferencesRepositoryImpl> preferencesRepositoryImplProvider;
+
+    private Provider<PreferencesRepository> bindPreferencesRepositoryProvider;
+
     private Provider<TaskDatabase> provideDatabaseProvider;
 
     private Provider<AiService> provideAiServiceProvider;
@@ -673,10 +685,6 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
     private Provider<TaskRepositoryImpl> taskRepositoryImplProvider;
 
     private Provider<TaskRepository> bindTaskRepositoryProvider;
-
-    private Provider<PreferencesRepositoryImpl> preferencesRepositoryImplProvider;
-
-    private Provider<PreferencesRepository> bindPreferencesRepositoryProvider;
 
     private SingletonCImpl(ApplicationContextModule applicationContextModuleParam) {
       this.applicationContextModule = applicationContextModuleParam;
@@ -694,14 +702,14 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
 
     @SuppressWarnings("unchecked")
     private void initialize(final ApplicationContextModule applicationContextModuleParam) {
-      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<TaskDatabase>(singletonCImpl, 1));
-      this.provideAiServiceProvider = DoubleCheck.provider(new SwitchingProvider<AiService>(singletonCImpl, 2));
-      this.chatRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 0);
-      this.bindChatRepositoryProvider = DoubleCheck.provider((Provider) chatRepositoryImplProvider);
-      this.taskRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 3);
-      this.bindTaskRepositoryProvider = DoubleCheck.provider((Provider) taskRepositoryImplProvider);
-      this.preferencesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 4);
+      this.preferencesRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 0);
       this.bindPreferencesRepositoryProvider = DoubleCheck.provider((Provider) preferencesRepositoryImplProvider);
+      this.provideDatabaseProvider = DoubleCheck.provider(new SwitchingProvider<TaskDatabase>(singletonCImpl, 2));
+      this.provideAiServiceProvider = DoubleCheck.provider(new SwitchingProvider<AiService>(singletonCImpl, 3));
+      this.chatRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 1);
+      this.bindChatRepositoryProvider = DoubleCheck.provider((Provider) chatRepositoryImplProvider);
+      this.taskRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 4);
+      this.bindTaskRepositoryProvider = DoubleCheck.provider((Provider) taskRepositoryImplProvider);
     }
 
     @Override
@@ -737,20 +745,20 @@ public final class DaggerTaskFlowApplication_HiltComponents_SingletonC {
       @Override
       public T get() {
         switch (id) {
-          case 0: // com.taskflow.app.data.repository.ChatRepositoryImpl 
-          return (T) new ChatRepositoryImpl(singletonCImpl.chatDao(), singletonCImpl.provideAiServiceProvider.get());
+          case 0: // com.taskflow.app.data.repository.PreferencesRepositoryImpl 
+          return (T) new PreferencesRepositoryImpl(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 1: // com.taskflow.app.data.local.TaskDatabase 
+          case 1: // com.taskflow.app.data.repository.ChatRepositoryImpl 
+          return (T) new ChatRepositoryImpl(singletonCImpl.chatDao(), singletonCImpl.provideAiServiceProvider.get(), singletonCImpl.bindPreferencesRepositoryProvider.get());
+
+          case 2: // com.taskflow.app.data.local.TaskDatabase 
           return (T) DatabaseModule_ProvideDatabaseFactory.provideDatabase(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
-          case 2: // com.taskflow.app.domain.service.AiService 
+          case 3: // com.taskflow.app.domain.service.AiService 
           return (T) RepositoryModule_Companion_ProvideAiServiceFactory.provideAiService();
 
-          case 3: // com.taskflow.app.data.repository.TaskRepositoryImpl 
+          case 4: // com.taskflow.app.data.repository.TaskRepositoryImpl 
           return (T) new TaskRepositoryImpl(singletonCImpl.taskDao());
-
-          case 4: // com.taskflow.app.data.repository.PreferencesRepositoryImpl 
-          return (T) new PreferencesRepositoryImpl(ApplicationContextModule_ProvideContextFactory.provideContext(singletonCImpl.applicationContextModule));
 
           default: throw new AssertionError(id);
         }

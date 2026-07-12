@@ -451,6 +451,57 @@ public final class ChatDao_Impl implements ChatDao {
     }, $completion);
   }
 
+  @Override
+  public Object getLatestMessage(final String chatId,
+      final Continuation<? super ChatMessageEntity> $completion) {
+    final String _sql = "SELECT * FROM chat_messages WHERE chatId = ? ORDER BY timestamp DESC LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, chatId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<ChatMessageEntity>() {
+      @Override
+      @Nullable
+      public ChatMessageEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfChatId = CursorUtil.getColumnIndexOrThrow(_cursor, "chatId");
+          final int _cursorIndexOfRole = CursorUtil.getColumnIndexOrThrow(_cursor, "role");
+          final int _cursorIndexOfContent = CursorUtil.getColumnIndexOrThrow(_cursor, "content");
+          final int _cursorIndexOfTimestamp = CursorUtil.getColumnIndexOrThrow(_cursor, "timestamp");
+          final int _cursorIndexOfSuggestedTasksJson = CursorUtil.getColumnIndexOrThrow(_cursor, "suggestedTasksJson");
+          final ChatMessageEntity _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpId;
+            _tmpId = _cursor.getString(_cursorIndexOfId);
+            final String _tmpChatId;
+            _tmpChatId = _cursor.getString(_cursorIndexOfChatId);
+            final String _tmpRole;
+            _tmpRole = _cursor.getString(_cursorIndexOfRole);
+            final String _tmpContent;
+            _tmpContent = _cursor.getString(_cursorIndexOfContent);
+            final long _tmpTimestamp;
+            _tmpTimestamp = _cursor.getLong(_cursorIndexOfTimestamp);
+            final String _tmpSuggestedTasksJson;
+            if (_cursor.isNull(_cursorIndexOfSuggestedTasksJson)) {
+              _tmpSuggestedTasksJson = null;
+            } else {
+              _tmpSuggestedTasksJson = _cursor.getString(_cursorIndexOfSuggestedTasksJson);
+            }
+            _result = new ChatMessageEntity(_tmpId,_tmpChatId,_tmpRole,_tmpContent,_tmpTimestamp,_tmpSuggestedTasksJson);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();
