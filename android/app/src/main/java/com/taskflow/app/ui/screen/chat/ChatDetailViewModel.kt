@@ -20,7 +20,8 @@ import javax.inject.Inject
 data class ChatDetailUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
-    val chatTitle: String = ""
+    val chatTitle: String = "",
+    val error: String? = null
 )
 
 @HiltViewModel
@@ -52,13 +53,46 @@ class ChatDetailViewModel @Inject constructor(
         if (content.isBlank() || _uiState.value.isLoading) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 sendChatMessageUseCase(chatId, content)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "发送失败，请检查网络和 API 配置"
+                )
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
+    }
+
+    fun regenerateLastResponse() {
+        val chatId = currentChatId ?: return
+        val messages = _uiState.value.messages
+        val lastUserIdx = messages.indexOfLast { it.role == com.taskflow.app.domain.model.ChatRole.USER }
+        if (lastUserIdx == -1) return
+
+        val userContent = messages[lastUserIdx].content
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                // 删除最后一条 assistant 消息后重新发送
+                val truncated = messages.dropLastWhile { it.role != com.taskflow.app.domain.model.ChatRole.USER }
+                // TODO: 需要 repository 支持删除最后一条消息后重发
+                sendChatMessageUseCase(chatId, userContent)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message ?: "重新生成失败"
+                )
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     fun createNewChat(onCreated: (String) -> Unit) {

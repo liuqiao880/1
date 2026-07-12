@@ -1,6 +1,7 @@
 package com.taskflow.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,16 +13,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,12 +43,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
-import dagger.hilt.android.lifecycle.ViewModelScoped
-import javax.inject.Inject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,10 +69,11 @@ fun SettingsModal(
     val aiProvider by preferencesRepository.aiProvider.collectAsState(initial = "")
 
     var showApiConfig by remember { mutableStateOf(false) }
-    var localApiKey by remember { mutableStateOf(aiApiKey) }
-    var localBaseUrl by remember { mutableStateOf(aiBaseUrl) }
-    var localModel by remember { mutableStateOf(aiModel) }
-    var localProvider by remember { mutableStateOf(aiProvider) }
+    var showColorPickerDialog by remember { mutableStateOf(false) }
+    var localApiKey by remember(aiApiKey) { mutableStateOf(aiApiKey) }
+    var localBaseUrl by remember(aiBaseUrl) { mutableStateOf(aiBaseUrl) }
+    var localModel by remember(aiModel) { mutableStateOf(aiModel) }
+    var localProvider by remember(aiProvider) { mutableStateOf(aiProvider) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -104,11 +112,7 @@ fun SettingsModal(
                 icon = Icons.Default.Palette,
                 title = "主题色",
                 subtitle = getAccentColorLabel(accentColor),
-                onClick = {
-                    showColorPicker(accentColor) { newColor ->
-                        preferencesRepository.setAccentColor(newColor)
-                    }
-                }
+                onClick = { showColorPickerDialog = true }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -138,7 +142,13 @@ fun SettingsModal(
                         preferencesRepository.setAiModel(localModel)
                         showApiConfig = false
                     },
-                    onCancel = { showApiConfig = false }
+                    onCancel = {
+                        localApiKey = aiApiKey
+                        localBaseUrl = aiBaseUrl
+                        localModel = aiModel
+                        localProvider = aiProvider
+                        showApiConfig = false
+                    }
                 )
             }
 
@@ -166,6 +176,18 @@ fun SettingsModal(
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+
+    // 颜色选择器对话框
+    if (showColorPickerDialog) {
+        ColorPickerDialog(
+            currentColor = accentColor,
+            onSelect = { newColor ->
+                preferencesRepository.setAccentColor(newColor)
+                showColorPickerDialog = false
+            },
+            onDismiss = { showColorPickerDialog = false }
+        )
+    }
 }
 
 fun getAccentColorLabel(color: AccentColor): String {
@@ -177,11 +199,11 @@ fun getAccentColorLabel(color: AccentColor): String {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun showColorPicker(
+fun ColorPickerDialog(
     currentColor: AccentColor,
-    onSelect: (AccentColor) -> Unit
+    onSelect: (AccentColor) -> Unit,
+    onDismiss: () -> Unit
 ) {
     val colors = AccentColor.values()
     val colorValues = mapOf(
@@ -191,35 +213,27 @@ fun showColorPicker(
         AccentColor.BLUE to Color(0xFF4682B4),
     )
 
-    ModalBottomSheet(
-        onDismissRequest = {},
-        sheetState = rememberModalBottomSheetState()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "选择主题色",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("选择主题色") },
+        text = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 colors.forEach { color ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.clickable { onSelect(color) }
+                    ) {
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(colorValues[color]!!)
-                                .clickable { onSelect(color) }
+                                .background(colorValues[color]!!, CircleShape)
                                 .border(
                                     width = if (color == currentColor) 3.dp else 0.dp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = if (color == currentColor) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = CircleShape
                                 )
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -231,8 +245,11 @@ fun showColorPicker(
                     }
                 }
             }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
         }
-    }
+    )
 }
 
 @Composable
@@ -248,15 +265,16 @@ fun ApiConfigForm(
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
+    var showApiKey by remember { mutableStateOf(false) }
+
     Column {
-        val providers = listOf("openai", "gemini", "anthropic", "ollama")
         Text(
             text = "Provider",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = provider,
             onValueChange = onProviderChange,
             modifier = Modifier.fillMaxWidth(),
@@ -271,7 +289,7 @@ fun ApiConfigForm(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = baseUrl,
             onValueChange = onBaseUrlChange,
             modifier = Modifier.fillMaxWidth(),
@@ -286,11 +304,21 @@ fun ApiConfigForm(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = apiKey,
             onValueChange = onApiKeyChange,
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = { showApiKey = !showApiKey }) {
+                    Icon(
+                        if (showApiKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                        contentDescription = if (showApiKey) "隐藏" else "显示",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -301,7 +329,7 @@ fun ApiConfigForm(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
-        androidx.compose.material3.OutlinedTextField(
+        OutlinedTextField(
             value = model,
             onValueChange = onModelChange,
             modifier = Modifier.fillMaxWidth(),
@@ -312,12 +340,12 @@ fun ApiConfigForm(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            gap = 8.dp
+            horizontalArrangement = Arrangement.End
         ) {
             TextButton(onClick = onCancel) {
                 Text("取消")
             }
+            Spacer(modifier = Modifier.width(8.dp))
             TextButton(onClick = onSave) {
                 Text("保存")
             }

@@ -208,7 +208,10 @@ export const useChatStore = create<ChatState>()(
       name: 'taskflow-chat',
       partialize: (state) => ({
         chats: state.chats,
-        aiConfig: state.aiConfig,
+        aiConfig: {
+          ...state.aiConfig,
+          apiKey: '', // 不持久化 API Key 到 localStorage
+        },
       }),
     }
   )

@@ -1,5 +1,6 @@
 package com.taskflow.app.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,8 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -22,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,19 +36,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.Task
+import com.taskflow.app.domain.repository.PreferencesRepository
+import com.taskflow.app.domain.service.AiConfigData
 import com.taskflow.app.domain.service.AiService
 
 @Composable
 fun AiPlanModal(
     onDismiss: () -> Unit,
-    onConfirm: (List<Task>) -> Unit
+    onConfirm: (List<Task>) -> Unit,
+    preferencesRepository: PreferencesRepository
 ) {
     val aiService = remember { AiService() }
+    val aiApiKey by preferencesRepository.aiApiKey.collectAsState(initial = "")
+    val aiBaseUrl by preferencesRepository.aiBaseUrl.collectAsState(initial = "")
+    val aiModel by preferencesRepository.aiModel.collectAsState(initial = "")
+    val aiProvider by preferencesRepository.aiProvider.collectAsState(initial = "")
+    val aiSystemPrompt by preferencesRepository.aiSystemPrompt.collectAsState(initial = "")
+
     var step by remember { mutableStateOf(AiStep.FORM) }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var generatedTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
     val selectedTasks = remember { mutableStateListOf<Task>() }
+    var errorMessage by remember { mutableStateOf("") }
 
     when (step) {
         AiStep.FORM -> {
@@ -68,6 +82,14 @@ fun AiPlanModal(
                             minLines = 2,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        if (aiApiKey.isBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "提示：未配置 API Key，将使用演示模式生成模拟数据。请在设置中配置 AI API 以使用真实规划。",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 },
                 confirmButton = {
@@ -88,12 +110,29 @@ fun AiPlanModal(
 
         AiStep.LOADING -> {
             LaunchedEffect(Unit) {
-                val messages = listOf("user" to (title + if (description.isNotBlank()) "：$description" else ""))
-                val response = aiService.chat(messages, com.taskflow.app.domain.service.AiConfigData())
-                generatedTasks = aiService.parseTasksFromResponse(response)
-                selectedTasks.clear()
-                selectedTasks.addAll(generatedTasks)
-                step = AiStep.PREVIEW
+                try {
+                    val messages = listOf("user" to (title + if (description.isNotBlank()) "：$description" else ""))
+                    val config = AiConfigData(
+                        provider = aiProvider,
+                        baseUrl = aiBaseUrl,
+                        apiKey = aiApiKey,
+                        model = aiModel,
+                        systemPrompt = aiSystemPrompt
+                    )
+                    val response = aiService.chat(messages, config)
+                    generatedTasks = aiService.parseTasksFromResponse(response)
+                    if (generatedTasks.isEmpty()) {
+                        errorMessage = "AI 未能生成有效任务，请尝试更详细的描述"
+                        step = AiStep.ERROR
+                    } else {
+                        selectedTasks.clear()
+                        selectedTasks.addAll(generatedTasks)
+                        step = AiStep.PREVIEW
+                    }
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: "请求失败，请检查网络和 API 配置"
+                    step = AiStep.ERROR
+                }
             }
             AlertDialog(
                 onDismissRequest = {},
@@ -116,6 +155,32 @@ fun AiPlanModal(
             )
         }
 
+        AiStep.ERROR -> {
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = { Text("生成失败") },
+                text = {
+                    Column {
+                        Text(
+                            text = errorMessage,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { step = AiStep.LOADING }) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text(" 重试")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text("取消")
+                    }
+                }
+            )
+        }
+
         AiStep.PREVIEW -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
@@ -129,6 +194,11 @@ fun AiPlanModal(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (selectedTasks.contains(task)) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                        else MaterialTheme.colorScheme.surface
+                                    )
                                     .clickable {
                                         if (selectedTasks.contains(task)) {
                                             selectedTasks.remove(task)
@@ -136,7 +206,7 @@ fun AiPlanModal(
                                             selectedTasks.add(task)
                                         }
                                     }
-                                    .padding(vertical = 4.dp),
+                                    .padding(vertical = 8.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -195,5 +265,6 @@ fun AiPlanModal(
 enum class AiStep {
     FORM,
     LOADING,
-    PREVIEW
+    PREVIEW,
+    ERROR
 }

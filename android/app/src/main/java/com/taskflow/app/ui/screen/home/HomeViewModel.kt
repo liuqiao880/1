@@ -147,6 +147,7 @@ class HomeViewModel @Inject constructor(
         searchJob?.cancel()
         if (query.isNotBlank()) {
             searchJob = viewModelScope.launch {
+                delay(300) // 300ms 防抖
                 searchTasksUseCase(query).collectLatest { tasks ->
                     val grouped = if (tasks.isEmpty()) {
                         emptyList()

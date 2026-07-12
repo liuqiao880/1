@@ -6,6 +6,39 @@
 
 ---
 
+## [v0.6.0] - 2026-07-12
+
+### 🔧 全维度测试修复 `[Web✅ Android✅]`
+
+基于 6 维度测试检查报告（功能/兼容性/异常容错/UI交互/安全/性能），修复 34 项问题：
+
+#### 高危修复
+- **SettingsModal 编译错误**：showColorPicker 从 onClick 中调 @Composable 改为状态驱动 AlertDialog
+- **SettingsModal 颜色选择器无法关闭**：onDismissRequest 从空 lambda 改为正确关闭
+- **SettingsModal 缺少 border import**：添加 `import androidx.compose.foundation.border`
+- **SettingsModal Row gap API 不兼容**：移除 `gap` 参数改用 Spacer
+- **AiService.chat() 永远返回 mock**：实现真实 OkHttp 请求，支持超时和异常处理
+- **AiPlanModal 使用空 AiConfigData**：改为注入 PreferencesRepository 读取真实配置
+- **AiPlanModal 无 try-catch**：添加 ERROR 状态和重试功能
+- **ChatDetailScreen 添加按钮空实现**：改为弹出 DropdownMenu
+- **ChatDetailScreen 麦克风空实现**：集成 Android SpeechRecognizer 语音输入
+
+#### 中危修复
+- **SettingsModal API Key 明文显示**：改为 PasswordVisualTransformation + 眼睛图标切换
+- **SettingsModal remember key 不同步**：localApiKey 等添加 `remember(key)` 参数
+- **ChatDetailScreen 紫色渐变**：全部替换为 MaterialTheme.colorScheme.primary 主题色
+- **ChatDetailViewModel 无 error 状态**：添加 error 字段 + clearError 方法 + regenerateLastResponse
+- **HomeViewModel 搜索无防抖**：添加 300ms debounce
+- **Web 通知定时器 setInterval 泄漏**：分离 timer 和 interval，关闭时均清除
+- **Web aiService fetch 无超时**：添加 AbortController 30 秒超时
+- **Web API Key 明文存 localStorage**：partialize 中排除 apiKey 不持久化
+- **AiService.parseTasksFromResponse 格式不一致**：优先 JSON 解析，回退正则，与 Web 端对齐
+
+#### 低危修复
+- **SettingsModal 无用 import**：删除 ViewModelScoped 和 @Inject
+- **AiPlanModal 任务选择无视觉反馈**：添加 primaryContainer 背景色
+- **SettingsModal 取消按钮不恢复值**：取消时重置为 DataStore 原值
+
 ## [v0.5.0] - 2026-07-12
 
 ### 🎨 报纸风格美术升级 `[Web✅ Android✅]`

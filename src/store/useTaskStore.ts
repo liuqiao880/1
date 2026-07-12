@@ -4,6 +4,16 @@ import { Task, FilterType, ThemeType, AccentColor } from '@/types/task';
 import { mockTasks } from '@/data/mockTasks';
 
 let dailyNotificationTimer: ReturnType<typeof setTimeout> | null = null;
+let dailyNotificationInterval: ReturnType<typeof setInterval> | null = null;
+
+function sendDailyNotification() {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    const pendingTasks = useTaskStore.getState().tasks.filter((t) => t.status === 'todo');
+    new Notification('TaskFlow 今日待办', {
+      body: `你还有 ${pendingTasks.length} 个待办任务，加油！`,
+    });
+  }
+}
 
 function scheduleDailyNotification() {
   clearDailyNotification();
@@ -16,24 +26,8 @@ function scheduleDailyNotification() {
   const msUntil8am = next8am.getTime() - now.getTime();
 
   dailyNotificationTimer = setTimeout(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-      const pendingTasks = useTaskStore.getState().tasks.filter(
-        (t) => t.status === 'todo'
-      );
-      new Notification('TaskFlow 今日待办', {
-        body: `你还有 ${pendingTasks.length} 个待办任务，加油！`,
-      });
-    }
-    setInterval(() => {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        const pendingTasks = useTaskStore.getState().tasks.filter(
-          (t) => t.status === 'todo'
-        );
-        new Notification('TaskFlow 今日待办', {
-          body: `你还有 ${pendingTasks.length} 个待办任务，加油！`,
-        });
-      }
-    }, 24 * 60 * 60 * 1000);
+    sendDailyNotification();
+    dailyNotificationInterval = setInterval(sendDailyNotification, 24 * 60 * 60 * 1000);
   }, msUntil8am);
 }
 
@@ -41,6 +35,10 @@ function clearDailyNotification() {
   if (dailyNotificationTimer) {
     clearTimeout(dailyNotificationTimer);
     dailyNotificationTimer = null;
+  }
+  if (dailyNotificationInterval) {
+    clearInterval(dailyNotificationInterval);
+    dailyNotificationInterval = null;
   }
 }
 

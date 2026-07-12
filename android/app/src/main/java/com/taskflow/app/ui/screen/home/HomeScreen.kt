@@ -142,7 +142,8 @@ fun HomeScreen(
             onConfirm = { tasks ->
                 viewModel.addTasks(tasks)
                 viewModel.setShowAiModal(false)
-            }
+            },
+            preferencesRepository = viewModel.preferencesRepository
         )
     }
 

@@ -48,6 +48,9 @@ export const aiService = {
       const systemMsg = { role: 'system', content: systemPrompt };
       const allMessages = [systemMsg, ...messages];
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -59,7 +62,10 @@ export const aiService = {
           messages: allMessages,
           temperature: 0.7,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => '');
@@ -69,6 +75,9 @@ export const aiService = {
       const data = await response.json();
       return data.choices?.[0]?.message?.content || '';
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error('请求超时（30秒），请检查网络或稍后重试');
+      }
       if (error instanceof TypeError && error.message.includes('fetch')) {
         throw new Error('网络请求失败，请检查 Base URL 是否正确或网络连接');
       }

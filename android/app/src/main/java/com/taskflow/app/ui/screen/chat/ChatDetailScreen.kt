@@ -1,5 +1,10 @@
 package com.taskflow.app.ui.screen.chat
 
+import android.content.Intent
+import android.os.Bundle
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,9 +30,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,11 +55,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,14 +101,7 @@ fun ChatDetailScreen(
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(
-                                            Color(0xFFA855F7),
-                                            Color(0xFFEC4899)
-                                        )
-                                    )
-                                ),
+                                .background(MaterialTheme.colorScheme.primary),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -144,7 +146,7 @@ fun ChatDetailScreen(
                 value = inputText,
                 onValueChange = { inputText = it },
                 onSend = {
-                    if (inputText.isNotBlank()) {
+                    if (inputText.isNotBlank() && !uiState.isLoading) {
                         viewModel.sendMessage(inputText)
                         inputText = ""
                     }
@@ -180,6 +182,9 @@ fun ChatDetailScreen(
                             message = message,
                             onAddTasks = { tasks ->
                                 viewModel.addTasksToTaskList(tasks)
+                            },
+                            onRegenerate = {
+                                viewModel.regenerateLastResponse()
                             }
                         )
                     }
@@ -189,6 +194,39 @@ fun ChatDetailScreen(
                         }
                     }
                 }
+            }
+
+            // 错误提示
+            uiState.error?.let { error ->
+                Snackbar(
+                    message = error,
+                    onDismiss = { viewModel.clearError() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun Snackbar(message: String, onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .clickable { onDismiss() }
+            .padding(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onDismiss) {
+                Text("关闭", color = MaterialTheme.colorScheme.onErrorContainer)
             }
         }
     }
@@ -207,21 +245,14 @@ fun EmptyMessageState(onSuggestionClick: (String) -> Unit) {
             modifier = Modifier
                 .size(64.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFFF3E8FF),
-                            Color(0xFFFCE7F3)
-                        )
-                    )
-                ),
+                .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Default.AutoAwesome,
                 contentDescription = null,
                 modifier = Modifier.size(28.dp),
-                tint = Color(0xFFA855F7)
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -234,7 +265,7 @@ fun EmptyMessageState(onSuggestionClick: (String) -> Unit) {
             text = "告诉我你的目标，我来帮你拆解成可执行的任务清单",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
         SuggestionChips(onSuggestionClick = onSuggestionClick)
@@ -270,7 +301,11 @@ fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
 }
 
 @Composable
-fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
+fun MessageBubble(
+    message: ChatMessage,
+    onAddTasks: (List<Task>) -> Unit = {},
+    onRegenerate: () -> Unit = {}
+) {
     val isUser = message.role == ChatRole.USER
 
     Row(
@@ -282,11 +317,7 @@ fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(Color(0xFFA855F7), Color(0xFFEC4899))
-                        )
-                    ),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -315,9 +346,7 @@ fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
                 )
                 .background(
                     if (isUser)
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFF3B82F6), Color(0xFF2563EB))
-                        )
+                        SolidColor(MaterialTheme.colorScheme.primary)
                     else
                         SolidColor(MaterialTheme.colorScheme.surface)
                 )
@@ -356,8 +385,17 @@ fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
                                 )
                             }
                         }
-                        TextButton(onClick = { onAddTasks(message.suggestedTasks) }) {
-                            Text("添加到任务列表", color = MaterialTheme.colorScheme.primary)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { onRegenerate() }) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Text(" 重新生成", fontSize = 12.sp)
+                            }
+                            TextButton(onClick = { onAddTasks(message.suggestedTasks) }) {
+                                Text("添加到任务列表", color = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 }
@@ -370,7 +408,7 @@ fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF3B82F6)),
+                    .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -394,11 +432,7 @@ fun LoadingBubble() {
             modifier = Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0xFFA855F7), Color(0xFFEC4899))
-                    )
-                ),
+                .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -443,7 +477,7 @@ fun LoadingDot(delay: Int) {
             .size(8.dp)
             .clip(CircleShape)
             .background(
-                if (visible) Color(0xFFA855F7) else Color(0xFFD8B4FE)
+                if (visible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
             )
     )
 }
@@ -455,6 +489,45 @@ fun ChatInputBar(
     onSend: () -> Unit,
     isLoading: Boolean
 ) {
+    val context = LocalContext.current
+    var isListening by remember { mutableStateOf(false) }
+    var showAttachMenu by remember { mutableStateOf(false) }
+
+    val speechRecognizer = remember {
+        if (SpeechRecognizer.isRecognitionAvailable(context)) {
+            SpeechRecognizer.createSpeechRecognizer(context)
+        } else null
+    }
+
+    val speechIntent = remember {
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "zh-CN")
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+        }
+    }
+
+    LaunchedEffect(speechRecognizer) {
+        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onResults(results: Bundle?) {
+                val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
+                if (text.isNotBlank()) onValueChange(text)
+                isListening = false
+            }
+            override fun onError(error: Int) { isListening = false }
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() { isListening = false }
+            override fun onPartialResults(partialResults: Bundle?) {
+                val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
+                if (!text.isNullOrBlank()) onValueChange(text)
+            }
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -465,12 +538,28 @@ fun ChatInputBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(onClick = {}) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "添加",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // 添加按钮
+            Box {
+                IconButton(onClick = { showAttachMenu = true }) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "添加",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showAttachMenu,
+                    onDismissRequest = { showAttachMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("从相册选择图片") },
+                        onClick = { showAttachMenu = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("拍照") },
+                        onClick = { showAttachMenu = false }
+                    )
+                }
             }
 
             Box(
@@ -515,14 +604,7 @@ fun ChatInputBar(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(
-                                brush = Brush.linearGradient(
-                                    colors = listOf(
-                                        Color(0xFFA855F7),
-                                        Color(0xFFEC4899)
-                                    )
-                                )
-                            ),
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -534,11 +616,27 @@ fun ChatInputBar(
                     }
                 }
             } else {
-                IconButton(onClick = {}) {
+                IconButton(
+                    onClick = {
+                        if (speechRecognizer != null) {
+                            if (isListening) {
+                                speechRecognizer.stopListening()
+                                isListening = false
+                            } else {
+                                try {
+                                    speechRecognizer.startListening(speechIntent)
+                                    isListening = true
+                                } catch (e: Exception) {
+                                    isListening = false
+                                }
+                            }
+                        }
+                    }
+                ) {
                     Icon(
                         Icons.Default.Mic,
-                        contentDescription = "语音",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        contentDescription = if (isListening) "停止语音" else "语音",
+                        tint = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

@@ -1,9 +1,27 @@
 package com.taskflow.app.domain.service
 
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.TaskPriority
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 
 class AiService {
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .build()
+
+    private val gson = Gson()
 
     private val defaultSystemPrompt = """你是一位专业的任务拆分师，擅长将复杂的目标拆解为可执行的具体任务。
 
@@ -14,16 +32,77 @@ class AiService {
 4. 预估每个任务的大致时间节点
 5. 给出合理的执行顺序建议
 
-输出格式要求：请用自然语言简要分析，然后给出任务建议。"""
+输出格式要求：
+请以 JSON 格式输出任务列表，格式如下：
+{
+  "tasks": [
+    {
+      "title": "任务标题",
+      "description": "任务描述（可选）",
+      "priority": 1,
+      "dueDaysFromNow": 0,
+      "children": [...]
+    }
+  ]
+}
+
+重要：
+- 先回应用户，用自然语言简要分析和说明
+- 然后在回复末尾用 ```json 代码块包裹任务 JSON
+- 优先级 1=紧急，2=普通，3=低优
+- dueDaysFromNow 表示从今天起的天数偏移
+- 支持嵌套子任务，最多 2 层"""
 
     suspend fun chat(
         messages: List<Pair<String, String>>,
         config: AiConfigData
-    ): String {
+    ): String = withContext(Dispatchers.IO) {
         if (config.apiKey.isBlank()) {
-            return mockResponse(messages)
+            return@withContext "演示模式：未配置 API Key，以下为模拟数据。\n\n${mockResponse(messages)}"
         }
-        return mockResponse(messages)
+
+        val systemMsg = mapOf("role" to "system", "content" to (config.systemPrompt.ifBlank { defaultSystemPrompt }))
+        val allMessages = mutableListOf(systemMsg)
+        messages.forEach { (role, content) ->
+            allMessages.add(mapOf("role" to role, "content" to content))
+        }
+
+        val requestBody = mapOf(
+            "model" to config.model,
+            "messages" to allMessages,
+            "temperature" to 0.7
+        )
+
+        val jsonBody = gson.toJson(requestBody)
+        val request = Request.Builder()
+            .url("${config.baseUrl.trimEnd('/')}/chat/completions")
+            .addHeader("Authorization", "Bearer ${config.apiKey}")
+            .addHeader("Content-Type", "application/json")
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            val body = response.body?.string() ?: ""
+            if (!response.isSuccessful) {
+                throw Exception("API 请求失败 (${response.code}): ${body.take(200)}")
+            }
+            val responseType = object : TypeToken<Map<String, Any>>() {}.type
+            val json = gson.fromJson<Map<String, Any>>(body, responseType)
+            @Suppress("UNCHECKED_CAST")
+            val choices = json["choices"] as? List<Map<String, Any>> ?: return@withContext ""
+            val message = choices.firstOrNull()?.get("message") as? Map<String, Any> ?: return@withContext ""
+            message["content"] as? String ?: ""
+        } catch (e: SocketTimeoutException) {
+            throw Exception("请求超时，请检查网络连接")
+        } catch (e: UnknownHostException) {
+            throw Exception("无法连接到服务器，请检查 Base URL")
+        } catch (e: Exception) {
+            if (e.message?.startsWith("API") == true || e.message?.startsWith("请求") == true || e.message?.startsWith("无法") == true) {
+                throw e
+            }
+            throw Exception("请求失败: ${e.message}")
+        }
     }
 
     private fun mockResponse(messages: List<Pair<String, String>>): String {
@@ -33,69 +112,157 @@ class AiService {
             return keywords.any { lastUserMsg.contains(it) }
         }
 
-        return when {
-            hasKeyword(listOf("学习", "课程", "考试", "复习", "读书", "阅读")) ->
-                "好的！我来帮你规划这个学习任务。根据你的目标，我拆分为以下几个阶段：\n\n" +
-                "1. **制定学习计划** - 明确学习目标和时间安排\n" +
-                "   - 梳理知识大纲\n" +
-                "   - 分配每日学习时间\n\n" +
-                "2. **基础概念学习** - 系统学习核心知识点\n" +
-                "   - 阅读教材重点章节\n" +
-                "   - 做章节配套练习\n" +
-                "   - 整理笔记和重点\n\n" +
-                "3. **实战练习** - 通过习题巩固知识\n" +
-                "   - 完成模拟题\n" +
-                "   - 错题整理与复习\n\n" +
-                "4. **总复习与总结** - 查漏补缺，巩固成果\n\n" +
-                "建议按顺序执行，每个阶段完成后再进入下一阶段。加油！💪"
+        val analysis: String
+        val tasks: List<Map<String, Any>>
 
-            hasKeyword(listOf("项目", "开发", "产品", "上线", "需求", "设计")) ->
-                "好的！这是一个项目型任务，我按照标准项目流程为你拆解：\n\n" +
-                "1. **需求分析与规划** - 明确项目目标和范围\n" +
-                "   - 收集用户需求\n" +
-                "   - 确定功能优先级\n" +
-                "   - 制定项目排期\n\n" +
-                "2. **设计阶段** - 产品设计和技术方案\n" +
-                "   - 原型设计\n" +
-                "   - 技术方案评审\n" +
-                "   - UI 设计稿\n\n" +
-                "3. **开发实现** - 核心功能开发\n" +
-                "   - 搭建项目架构\n" +
-                "   - 开发核心功能模块\n" +
-                "   - 联调与测试\n\n" +
-                "4. **上线发布** - 部署与验证\n\n" +
-                "建议用敏捷方式迭代推进，每个小阶段都有可交付成果。"
-
-            hasKeyword(listOf("健身", "减肥", "运动", "锻炼", "跑步")) ->
-                "好的！我来为你规划健身计划，循序渐进才能坚持下去：\n\n" +
-                "1. **体能测试与目标设定**\n" +
-                "   - 测量身体基础数据\n" +
-                "   - 设定阶段性目标\n\n" +
-                "2. **第一阶段：适应期（2周）** - 培养运动习惯\n" +
-                "   - 每周3次轻度有氧运动\n" +
-                "   - 学习正确的动作姿势\n" +
-                "   - 调整饮食结构\n\n" +
-                "3. **第二阶段：提升期（4周）** - 增加训练强度\n" +
-                "   - 加入力量训练\n" +
-                "   - 提高有氧强度\n\n" +
-                "记住：坚持比强度更重要！每周至少休息1-2天给身体恢复。"
-
-            else ->
-                "好的！我来帮你拆解这个任务。根据你的描述，我建议这样安排：\n\n" +
-                "1. **明确目标与范围**\n" +
-                "   - 梳理具体需求\n" +
-                "   - 确定优先级排序\n\n" +
-                "2. **制定执行计划**\n" +
-                "   - 拆分关键步骤\n" +
-                "   - 预估每个步骤耗时\n\n" +
-                "3. **执行并定期复盘**\n" +
-                "   - 按计划推进\n" +
-                "   - 每周回顾调整\n\n" +
-                "有什么具体细节想补充的吗？可以继续告诉我，我来帮你细化。"
+        when {
+            hasKeyword(listOf("学习", "课程", "考试", "复习", "读书", "阅读")) -> {
+                analysis = "好的！我来帮你规划这个学习任务。根据你的目标，我拆分为以下几个阶段："
+                tasks = listOf(
+                    mapOf("title" to "制定学习计划", "description" to "明确学习目标和时间安排", "priority" to 2, "dueDaysFromNow" to 0, "children" to listOf(
+                        mapOf("title" to "梳理知识大纲", "priority" to 2, "dueDaysFromNow" to 0),
+                        mapOf("title" to "分配每日学习时间", "priority" to 2, "dueDaysFromNow" to 1)
+                    )),
+                    mapOf("title" to "基础概念学习", "description" to "系统学习核心知识点", "priority" to 1, "dueDaysFromNow" to 2, "children" to listOf(
+                        mapOf("title" to "阅读教材重点章节", "priority" to 1, "dueDaysFromNow" to 2),
+                        mapOf("title" to "做章节配套练习", "priority" to 1, "dueDaysFromNow" to 3),
+                        mapOf("title" to "整理笔记和重点", "priority" to 2, "dueDaysFromNow" to 4)
+                    )),
+                    mapOf("title" to "实战练习", "description" to "通过习题巩固知识", "priority" to 1, "dueDaysFromNow" to 5, "children" to listOf(
+                        mapOf("title" to "完成模拟题", "priority" to 1, "dueDaysFromNow" to 5),
+                        mapOf("title" to "错题整理与复习", "priority" to 1, "dueDaysFromNow" to 6)
+                    )),
+                    mapOf("title" to "总复习与总结", "priority" to 2, "dueDaysFromNow" to 7)
+                )
+            }
+            hasKeyword(listOf("项目", "开发", "产品", "上线", "需求", "设计")) -> {
+                analysis = "好的！这是一个项目型任务，我按照标准项目流程为你拆解："
+                tasks = listOf(
+                    mapOf("title" to "需求分析与规划", "description" to "明确项目目标和范围", "priority" to 1, "dueDaysFromNow" to 0, "children" to listOf(
+                        mapOf("title" to "收集用户需求", "priority" to 1, "dueDaysFromNow" to 0),
+                        mapOf("title" to "确定功能优先级", "priority" to 2, "dueDaysFromNow" to 1),
+                        mapOf("title" to "制定项目排期", "priority" to 2, "dueDaysFromNow" to 1)
+                    )),
+                    mapOf("title" to "设计阶段", "description" to "产品设计和技术方案", "priority" to 1, "dueDaysFromNow" to 2, "children" to listOf(
+                        mapOf("title" to "原型设计", "priority" to 1, "dueDaysFromNow" to 2),
+                        mapOf("title" to "技术方案评审", "priority" to 1, "dueDaysFromNow" to 3),
+                        mapOf("title" to "UI 设计稿", "priority" to 2, "dueDaysFromNow" to 4)
+                    )),
+                    mapOf("title" to "开发实现", "description" to "核心功能开发", "priority" to 1, "dueDaysFromNow" to 5, "children" to listOf(
+                        mapOf("title" to "搭建项目架构", "priority" to 1, "dueDaysFromNow" to 5),
+                        mapOf("title" to "开发核心功能模块", "priority" to 1, "dueDaysFromNow" to 8),
+                        mapOf("title" to "联调与测试", "priority" to 2, "dueDaysFromNow" to 12)
+                    )),
+                    mapOf("title" to "上线发布", "priority" to 2, "dueDaysFromNow" to 14)
+                )
+            }
+            hasKeyword(listOf("健身", "减肥", "运动", "锻炼", "跑步")) -> {
+                analysis = "好的！我来为你规划健身计划，循序渐进才能坚持下去："
+                tasks = listOf(
+                    mapOf("title" to "体能测试与目标设定", "priority" to 2, "dueDaysFromNow" to 0, "children" to listOf(
+                        mapOf("title" to "测量身体基础数据", "priority" to 2, "dueDaysFromNow" to 0),
+                        mapOf("title" to "设定阶段性目标", "priority" to 2, "dueDaysFromNow" to 0)
+                    )),
+                    mapOf("title" to "第一阶段：适应期（2周）", "description" to "培养运动习惯", "priority" to 1, "dueDaysFromNow" to 1, "children" to listOf(
+                        mapOf("title" to "每周3次轻度有氧运动", "priority" to 1, "dueDaysFromNow" to 1),
+                        mapOf("title" to "学习正确的动作姿势", "priority" to 2, "dueDaysFromNow" to 3),
+                        mapOf("title" to "调整饮食结构", "priority" to 2, "dueDaysFromNow" to 5)
+                    )),
+                    mapOf("title" to "第二阶段：提升期（4周）", "description" to "增加训练强度", "priority" to 1, "dueDaysFromNow" to 14, "children" to listOf(
+                        mapOf("title" to "加入力量训练", "priority" to 1, "dueDaysFromNow" to 14),
+                        mapOf("title" to "提高有氧强度", "priority" to 1, "dueDaysFromNow" to 21)
+                    ))
+                )
+            }
+            else -> {
+                analysis = "好的！我来帮你拆解这个任务。根据你的描述，我建议这样安排："
+                tasks = listOf(
+                    mapOf("title" to "明确目标与范围", "priority" to 1, "dueDaysFromNow" to 0, "children" to listOf(
+                        mapOf("title" to "梳理具体需求", "priority" to 1, "dueDaysFromNow" to 0),
+                        mapOf("title" to "确定优先级排序", "priority" to 2, "dueDaysFromNow" to 1)
+                    )),
+                    mapOf("title" to "制定执行计划", "priority" to 1, "dueDaysFromNow" to 2, "children" to listOf(
+                        mapOf("title" to "拆分关键步骤", "priority" to 1, "dueDaysFromNow" to 2),
+                        mapOf("title" to "预估每个步骤耗时", "priority" to 2, "dueDaysFromNow" to 3)
+                    )),
+                    mapOf("title" to "执行并定期复盘", "priority" to 1, "dueDaysFromNow" to 4)
+                )
+            }
         }
+
+        val jsonStr = gson.toJson(mapOf("tasks" to tasks))
+        return "$analysis\n\n```json\n$jsonStr\n```"
     }
 
     fun parseTasksFromResponse(content: String): List<Task> {
+        // 优先尝试 JSON 格式解析
+        val jsonMatch = Regex("""```json\s*([\s\S]*?)\s*```""").find(content)
+        if (jsonMatch != null) {
+            try {
+                val jsonStr = jsonMatch.groupValues[1]
+                val responseType = object : TypeToken<Map<String, Any>>() {}.type
+                val parsed = gson.fromJson<Map<String, Any>>(jsonStr, responseType)
+                @Suppress("UNCHECKED_CAST")
+                val rawTasks = parsed["tasks"] as? List<Map<String, Any>> ?: return emptyList()
+                return convertJsonToTasks(rawTasks)
+            } catch (e: Exception) {
+                // JSON 解析失败，回退到正则
+            }
+        }
+        // 回退到正则解析
+        return parseTasksByRegex(content)
+    }
+
+    private fun convertJsonToTasks(rawTasks: List<Map<String, Any>>, parentId: Int? = null): List<Task> {
+        val todayTs = System.currentTimeMillis()
+        val dayMs = 24 * 60 * 60 * 1000L
+        var nextId = 1000
+
+        return rawTasks.mapIndexed { index, item ->
+            val id = nextId + index
+            val priority = when ((item["priority"] as? Double)?.toInt() ?: 2) {
+                1 -> TaskPriority.HIGH
+                3 -> TaskPriority.LOW
+                else -> TaskPriority.MEDIUM
+            }
+            val dueDays = (item["dueDaysFromNow"] as? Double)?.toInt() ?: 0
+
+            @Suppress("UNCHECKED_CAST")
+            val children = (item["children"] as? List<Map<String, Any>>)?.let { childList ->
+                childList.mapIndexed { childIndex, childItem ->
+                    val childPriority = when ((childItem["priority"] as? Double)?.toInt() ?: 2) {
+                        1 -> TaskPriority.HIGH
+                        3 -> TaskPriority.LOW
+                        else -> TaskPriority.MEDIUM
+                    }
+                    val childDueDays = (childItem["dueDaysFromNow"] as? Double)?.toInt() ?: 0
+                    Task(
+                        id = nextId + rawTasks.size + childIndex,
+                        title = childItem["title"] as? String ?: "",
+                        description = childItem["description"] as? String,
+                        parentId = id,
+                        priority = childPriority,
+                        dueDate = todayTs + childDueDays * dayMs,
+                        aiGenerated = true,
+                        children = emptyList()
+                    )
+                }
+            } ?: emptyList()
+
+            Task(
+                id = id,
+                title = item["title"] as? String ?: "",
+                description = item["description"] as? String,
+                parentId = parentId,
+                priority = priority,
+                dueDate = todayTs + dueDays * dayMs,
+                aiGenerated = true,
+                children = children
+            )
+        }
+    }
+
+    private fun parseTasksByRegex(content: String): List<Task> {
         val todayTs = System.currentTimeMillis()
         val dayMs = 24 * 60 * 60 * 1000L
 
@@ -137,11 +304,6 @@ class AiService {
                 tasks[currentParentIndex] = tasks[currentParentIndex].copy(
                     children = tasks[currentParentIndex].children + childTask
                 )
-                continue
-            }
-
-            val simpleParentMatch = Regex("""^(\d+)\.\s*(.+)$""").find(trimmed)
-            if (simpleParentMatch != null && trimmed.contains("**")) {
                 continue
             }
         }
