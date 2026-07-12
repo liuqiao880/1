@@ -9,26 +9,28 @@ import com.taskflow.app.domain.model.Chat
 import com.taskflow.app.domain.model.ChatMessage
 import com.taskflow.app.domain.model.ChatRole
 import com.taskflow.app.domain.repository.ChatRepository
+import com.taskflow.app.domain.repository.PreferencesRepository
 import com.taskflow.app.domain.service.AiConfigData
 import com.taskflow.app.domain.service.AiService
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
     private val chatDao: ChatDao,
-    private val aiService: AiService
+    private val aiService: AiService,
+    private val preferencesRepository: PreferencesRepository
 ) : ChatRepository {
 
-    private val aiConfig = AiConfigData()
-
     override fun getAllChats(): Flow<List<Chat>> {
-        return chatDao.getAllChats().combine(
-            kotlinx.coroutines.flow.flowOf(emptyList<ChatMessage>())
-        ) { chatEntities, _ ->
-            chatEntities.map { it.toDomain() }
+        return chatDao.getAllChats().map { chatEntities ->
+            chatEntities.map { entity ->
+                val latestMsg = chatDao.getLatestMessage(entity.id)
+                val messages = if (latestMsg != null) listOf(latestMsg.toDomain()) else emptyList()
+                entity.toDomain(messages)
+            }
         }
     }
 
@@ -62,7 +64,10 @@ class ChatRepositoryImpl @Inject constructor(
         val now = System.currentTimeMillis()
 
         val chat = chatDao.getChatById(chatId) ?: return null
-        val isFirst = chatDao.getMessageListForChat(chatId).isEmpty()
+
+        // 获取历史消息（不包含当前用户消息），同时判断是否为首条消息
+        val existingMessages = chatDao.getMessageListForChat(chatId)
+        val isFirst = existingMessages.isEmpty()
 
         val userMsgId = UUID.randomUUID().toString()
         val userMsg = ChatMessage(
@@ -80,11 +85,22 @@ class ChatRepositoryImpl @Inject constructor(
             chatDao.updateChatTime(chatId, now)
         }
 
-        val history = chatDao.getMessageListForChat(chatId).map {
+        // 构建调用 AI 的历史：既有消息 + 当前用户消息
+        val history = existingMessages.map {
             (if (it.role == "USER") "user" else "assistant") to it.content
-        }
+        } + ("user" to content.trim())
 
-        val response = aiService.chat(history, aiConfig)
+        val aiConfig = AiConfigData(
+            apiKey = preferencesRepository.aiApiKey.first(),
+            baseUrl = preferencesRepository.aiBaseUrl.first(),
+            model = preferencesRepository.aiModel.first()
+        )
+
+        val response = try {
+            aiService.chat(history, aiConfig)
+        } catch (e: Exception) {
+            "抱歉，AI 服务暂时不可用，请稍后重试。"
+        }
         val suggestedTasks = aiService.parseTasksFromResponse(response)
 
         val assistantMsgId = UUID.randomUUID().toString()

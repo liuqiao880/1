@@ -11,7 +11,7 @@ import com.taskflow.app.data.local.entity.TaskEntity
 @Database(
     entities = [TaskEntity::class, ChatEntity::class, ChatMessageEntity::class],
     version = 3,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class TaskDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao

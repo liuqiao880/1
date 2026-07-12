@@ -10,6 +10,7 @@ import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -33,7 +34,7 @@ class PreferencesRepositoryImpl @Inject constructor(
     override val theme: Flow<ThemeType> = context.dataStore.data
         .map { prefs ->
             val value = prefs[Keys.THEME] ?: ThemeType.SYSTEM.name
-            ThemeType.valueOf(value)
+            ThemeType.values().firstOrNull { it.name == value } ?: ThemeType.SYSTEM
         }
 
     override val expandedParents: Flow<Set<Int>> = context.dataStore.data
@@ -73,9 +74,11 @@ class PreferencesRepositoryImpl @Inject constructor(
     }
 
     override suspend fun toggleParentExpanded(id: Int) {
-        val current = expandedParents
-        // Note: In real implementation we'd need a different approach
-        // This is simplified - use collect with first() in practice
+        val current = expandedParents.first()
+        val updated = if (current.contains(id)) current - id else current + id
+        context.dataStore.edit {
+            it[Keys.EXPANDED_PARENTS] = updated.joinToString(",")
+        }
     }
 
     override suspend fun setAiApiKey(key: String) {

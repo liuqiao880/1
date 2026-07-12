@@ -2,7 +2,6 @@ package com.taskflow.app.domain.service
 
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.TaskPriority
-import kotlin.random.Random
 
 class AiService {
 
@@ -99,11 +98,10 @@ class AiService {
     fun parseTasksFromResponse(content: String): List<Task> {
         val todayTs = System.currentTimeMillis()
         val dayMs = 24 * 60 * 60 * 1000L
-        var nextId = Random.nextInt(10000, 99999)
 
         val lines = content.lines()
         val tasks = mutableListOf<Task>()
-        var currentParent: Task? = null
+        var currentParentIndex = -1
 
         for (line in lines) {
             val trimmed = line.trim()
@@ -113,7 +111,7 @@ class AiService {
                 val title = parentMatch.groupValues[2]
                 val description = parentMatch.groupValues[3]
                 val task = Task(
-                    id = nextId++,
+                    id = 0,
                     title = title,
                     description = description,
                     priority = TaskPriority.MEDIUM,
@@ -122,26 +120,23 @@ class AiService {
                     children = emptyList()
                 )
                 tasks.add(task)
-                currentParent = task
+                currentParentIndex = tasks.size - 1
                 continue
             }
 
             val childMatch = Regex("""^-\s*(.+)$""").find(trimmed)
-            if (childMatch != null && currentParent != null) {
+            if (childMatch != null && currentParentIndex != -1) {
                 val childTitle = childMatch.groupValues[1]
                 val childTask = Task(
-                    id = nextId++,
+                    id = 0,
                     title = childTitle,
-                    parentId = currentParent.id,
+                    parentId = tasks[currentParentIndex].id,
                     priority = TaskPriority.MEDIUM,
                     aiGenerated = true
                 )
-                val idx = tasks.indexOfFirst { it.id == currentParent.id }
-                if (idx != -1) {
-                    tasks[idx] = tasks[idx].copy(
-                        children = tasks[idx].children + childTask
-                    )
-                }
+                tasks[currentParentIndex] = tasks[currentParentIndex].copy(
+                    children = tasks[currentParentIndex].children + childTask
+                )
                 continue
             }
 

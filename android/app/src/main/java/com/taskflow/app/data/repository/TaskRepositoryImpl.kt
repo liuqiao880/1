@@ -11,6 +11,7 @@ import com.taskflow.app.domain.repository.TaskRepository
 import com.taskflow.app.util.DateUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -29,8 +30,13 @@ class TaskRepositoryImpl @Inject constructor(
     override fun getParentTasks(): Flow<List<Task>> = getAllTasks()
 
     override fun getTaskById(id: Int): Flow<Task?> {
-        return taskDao.getAllParentTasks().map { list ->
-            list.find { it.id == id }?.let { buildTaskWithChildren(it) }
+        return flow {
+            val entity = taskDao.getTaskById(id)
+            if (entity != null) {
+                emit(buildTaskWithChildren(entity))
+            } else {
+                emit(null)
+            }
         }
     }
 
@@ -42,7 +48,24 @@ class TaskRepositoryImpl @Inject constructor(
 
     override fun searchTasks(query: String): Flow<List<Task>> {
         return taskDao.searchTasks(query).map { list ->
-            list.filter { it.parentId == null }.map { buildTaskWithChildren(it) }
+            val parentIds = mutableSetOf<Int>()
+            val resultParents = mutableListOf<TaskEntity>()
+            list.forEach { entity ->
+                if (entity.parentId == null) {
+                    if (!parentIds.contains(entity.id)) {
+                        resultParents.add(entity)
+                        parentIds.add(entity.id)
+                    }
+                } else {
+                    if (!parentIds.contains(entity.parentId)) {
+                        taskDao.getTaskById(entity.parentId)?.let { parent ->
+                            resultParents.add(parent)
+                            parentIds.add(parent.id)
+                        }
+                    }
+                }
+            }
+            resultParents.map { buildTaskWithChildren(it) }
         }
     }
 

@@ -7,6 +7,7 @@ import com.taskflow.app.domain.usecase.CreateChatUseCase
 import com.taskflow.app.domain.usecase.GetChatMessagesUseCase
 import com.taskflow.app.domain.usecase.SendChatMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,15 +32,14 @@ class ChatDetailViewModel @Inject constructor(
     val uiState: StateFlow<ChatDetailUiState> = _uiState.asStateFlow()
 
     private var currentChatId: String? = null
+    private var loadJob: Job? = null
 
     fun loadChat(chatId: String) {
         currentChatId = chatId
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             getChatMessagesUseCase(chatId).collectLatest { messages ->
-                _uiState.value = _uiState.value.copy(
-                    messages = messages,
-                    chatTitle = messages.firstOrNull()?.content?.take(20) ?: "新对话"
-                )
+                _uiState.value = _uiState.value.copy(messages = messages)
             }
         }
     }
@@ -50,8 +50,11 @@ class ChatDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            sendChatMessageUseCase(chatId, content)
-            _uiState.value = _uiState.value.copy(isLoading = false)
+            try {
+                sendChatMessageUseCase(chatId, content)
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
         }
     }
 

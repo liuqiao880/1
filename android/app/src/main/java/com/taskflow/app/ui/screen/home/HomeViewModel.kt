@@ -6,6 +6,8 @@ import com.taskflow.app.domain.model.FilterType
 import com.taskflow.app.domain.model.PomodoroPhase
 import com.taskflow.app.domain.model.PomodoroState
 import com.taskflow.app.domain.model.Task
+import com.taskflow.app.domain.model.TaskPriority
+import com.taskflow.app.domain.model.TaskStatus
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
 import com.taskflow.app.domain.usecase.AddTaskUseCase
@@ -18,6 +20,7 @@ import com.taskflow.app.domain.usecase.SearchTasksUseCase
 import com.taskflow.app.domain.usecase.ToggleTaskUseCase
 import com.taskflow.app.domain.usecase.UpdateTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +28,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -63,25 +68,38 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var timerJob: Job? = null
+    private var loadJob: Job? = null
+    private var searchJob: Job? = null
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val filterFlow = MutableStateFlow(FilterType.ALL)
+
+    private var lastDeletedTask: Task? = null
+    private var lastDeletedTasks: List<Task> = emptyList()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
-        loadTasks()
+        observeTasks()
         observePreferences()
     }
 
-    private fun loadTasks() {
-        viewModelScope.launch {
-            combine(
-                getGroupedTasksUseCase(_uiState.value.filter),
-                preferencesRepository.expandedParents
-            ) { grouped, expanded ->
-                _uiState.value.copy(
-                    groupedTasks = grouped,
-                    expandedParents = expanded
-                )
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeTasks() {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            filterFlow.flatMapLatest { filter ->
+                combine(
+                    getGroupedTasksUseCase(filter),
+                    preferencesRepository.expandedParents
+                ) { grouped, expanded ->
+                    _uiState.value.copy(
+                        groupedTasks = grouped,
+                        expandedParents = expanded,
+                        filter = filter
+                    )
+                }
             }.collectLatest { state ->
                 _uiState.value = state
             }
@@ -97,8 +115,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun setFilter(filter: FilterType) {
-        _uiState.value = _uiState.value.copy(filter = filter)
-        loadTasks()
+        filterFlow.value = filter
     }
 
     fun toggleTask(taskId: Int) {
@@ -115,8 +132,9 @@ class HomeViewModel @Inject constructor(
 
     fun setSearchQuery(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
+        searchJob?.cancel()
         if (query.isNotBlank()) {
-            viewModelScope.launch {
+            searchJob = viewModelScope.launch {
                 searchTasksUseCase(query).collectLatest { tasks ->
                     val grouped = if (tasks.isEmpty()) {
                         emptyList()
@@ -127,7 +145,7 @@ class HomeViewModel @Inject constructor(
                 }
             }
         } else {
-            loadTasks()
+            observeTasks()
         }
     }
 
@@ -135,12 +153,29 @@ class HomeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isSearchActive = active)
         if (!active) {
             _uiState.value = _uiState.value.copy(searchQuery = "")
-            loadTasks()
+            searchJob?.cancel()
+            observeTasks()
         }
     }
 
     fun setShowAiModal(show: Boolean) {
         _uiState.value = _uiState.value.copy(showAiModal = show)
+    }
+
+    fun openAddTask() {
+        _uiState.value = _uiState.value.copy(
+            showEditModal = true,
+            editingTask = Task(
+                id = 0,
+                title = "",
+                description = "",
+                status = TaskStatus.TODO,
+                priority = TaskPriority.MEDIUM,
+                dueDate = System.currentTimeMillis(),
+                createTime = System.currentTimeMillis(),
+                updateTime = System.currentTimeMillis()
+            )
+        )
     }
 
     fun openEditTask(task: Task) {
@@ -166,8 +201,20 @@ class HomeViewModel @Inject constructor(
 
     fun deleteTask(taskId: Int) {
         viewModelScope.launch {
+            val task = getTaskByIdUseCase(taskId).first()
+            lastDeletedTask = task
             deleteTaskUseCase(taskId)
             _uiState.value = _uiState.value.copy(undoMessage = "任务已删除")
+        }
+    }
+
+    fun undoDelete() {
+        viewModelScope.launch {
+            lastDeletedTask?.let { task ->
+                addTaskUseCase(task)
+                lastDeletedTask = null
+                _uiState.value = _uiState.value.copy(undoMessage = null)
+            }
         }
     }
 
@@ -195,15 +242,27 @@ class HomeViewModel @Inject constructor(
 
     fun deleteSelected() {
         viewModelScope.launch {
-            val count = _uiState.value.selectedTasks.size
-            _uiState.value.selectedTasks.forEach { id ->
+            val selectedIds = _uiState.value.selectedTasks
+            val deleted = mutableListOf<Task>()
+            selectedIds.forEach { id ->
+                val task = getTaskByIdUseCase(id).first()
+                if (task != null) deleted.add(task)
                 deleteTaskUseCase(id)
             }
+            lastDeletedTasks = deleted
             _uiState.value = _uiState.value.copy(
                 multiSelectMode = false,
                 selectedTasks = emptySet(),
-                undoMessage = "已删除 $count 个任务"
+                undoMessage = "已删除 ${selectedIds.size} 个任务"
             )
+        }
+    }
+
+    fun undoDeleteSelected() {
+        viewModelScope.launch {
+            lastDeletedTasks.forEach { addTaskUseCase(it) }
+            lastDeletedTasks = emptyList()
+            _uiState.value = _uiState.value.copy(undoMessage = null)
         }
     }
 
@@ -274,7 +333,6 @@ class HomeViewModel @Inject constructor(
     }
 
     fun skipPomodoro() {
-        val current = _uiState.value.pomodoroState
         moveToNextPhase()
     }
 
@@ -324,47 +382,30 @@ class HomeViewModel @Inject constructor(
         timerJob = null
     }
 
-    private fun onPhaseComplete() {
+    private suspend fun onPhaseComplete() {
         stopTimer()
         val current = _uiState.value.pomodoroState
-
-        viewModelScope.launch {
-            if (current.phase == PomodoroPhase.FOCUS && current.currentTaskId != null) {
-                incrementPomodoroUseCase(current.currentTaskId)
-            }
-
-            val newCompleted = if (current.phase == PomodoroPhase.FOCUS) {
-                current.completedPomodoros + 1
-            } else {
-                current.completedPomodoros
-            }
-
-            val nextPhase = when (current.phase) {
-                PomodoroPhase.FOCUS -> {
-                    if (newCompleted > 0 && newCompleted % current.longBreakInterval == 0) {
-                        PomodoroPhase.LONG_BREAK
-                    } else {
-                        PomodoroPhase.SHORT_BREAK
-                    }
-                }
-                PomodoroPhase.SHORT_BREAK, PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
-            }
-
-            val nextDuration = when (nextPhase) {
-                PomodoroPhase.FOCUS -> current.focusDuration
-                PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
-                PomodoroPhase.LONG_BREAK -> current.longBreakDuration
-            }
-
-            _uiState.value = _uiState.value.copy(
-                pomodoroState = current.copy(
-                    phase = nextPhase,
-                    timeRemaining = nextDuration,
-                    isRunning = false,
-                    completedPomodoros = newCompleted
-                )
-            )
+        if (current.phase == PomodoroPhase.FOCUS && current.currentTaskId != null) {
+            incrementPomodoroUseCase(current.currentTaskId)
         }
+        val newCompleted = if (current.phase == PomodoroPhase.FOCUS) current.completedPomodoros + 1 else current.completedPomodoros
+        val nextPhase = when (current.phase) {
+            PomodoroPhase.FOCUS -> if (newCompleted > 0 && newCompleted % current.longBreakInterval == 0) PomodoroPhase.LONG_BREAK else PomodoroPhase.SHORT_BREAK
+            PomodoroPhase.SHORT_BREAK, PomodoroPhase.LONG_BREAK -> PomodoroPhase.FOCUS
+        }
+        val nextDuration = when (nextPhase) {
+            PomodoroPhase.FOCUS -> current.focusDuration
+            PomodoroPhase.SHORT_BREAK -> current.shortBreakDuration
+            PomodoroPhase.LONG_BREAK -> current.longBreakDuration
+        }
+        _uiState.value = _uiState.value.copy(
+            pomodoroState = current.copy(
+                phase = nextPhase,
+                timeRemaining = nextDuration,
+                isRunning = false,
+                completedPomodoros = newCompleted
+            )
+        )
     }
 
     private fun moveToNextPhase() {

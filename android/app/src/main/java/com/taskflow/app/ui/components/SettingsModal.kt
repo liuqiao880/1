@@ -40,10 +40,12 @@ import com.taskflow.app.domain.model.ThemeType
 fun SettingsModal(
     theme: ThemeType,
     onThemeChange: (ThemeType) -> Unit,
+    dailyReminderEnabled: Boolean = true,
+    onDailyReminderChange: (Boolean) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
-    var darkMode by remember { mutableStateOf(theme == ThemeType.DARK) }
+    var darkMode by remember(theme) { mutableStateOf(theme == ThemeType.DARK) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -86,7 +88,7 @@ fun SettingsModal(
                 icon = Icons.Default.Key,
                 title = "API 配置",
                 subtitle = "使用你自己的 AI API",
-                onClick = { /* 打开 API 配置页 */ }
+                onClick = { /* TODO: 打开 API 配置页 */ }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -98,7 +100,7 @@ fun SettingsModal(
                 title = "每日提醒",
                 subtitle = "早晨 8:00 推送今日待办",
                 trailing = {
-                    Switch(checked = true, onCheckedChange = {})
+                    Switch(checked = dailyReminderEnabled, onCheckedChange = onDailyReminderChange)
                 }
             )
 

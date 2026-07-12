@@ -16,7 +16,8 @@ import javax.inject.Inject
 
 data class ChatListUiState(
     val chats: List<Chat> = emptyList(),
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val isCreating: Boolean = false
 )
 
 @HiltViewModel
@@ -45,15 +46,27 @@ class ChatListViewModel @Inject constructor(
     }
 
     fun createChat(onCreated: (String) -> Unit) {
+        if (_uiState.value.isCreating) return
+        _uiState.value = _uiState.value.copy(isCreating = true)
         viewModelScope.launch {
-            val chat = createChatUseCase()
-            onCreated(chat.id)
+            try {
+                val chat = createChatUseCase()
+                onCreated(chat.id)
+            } catch (e: Exception) {
+                // 忽略创建失败
+            } finally {
+                _uiState.value = _uiState.value.copy(isCreating = false)
+            }
         }
     }
 
     fun deleteChat(chatId: String) {
         viewModelScope.launch {
-            deleteChatUseCase(chatId)
+            try {
+                deleteChatUseCase(chatId)
+            } catch (e: Exception) {
+                // 忽略删除失败
+            }
         }
     }
 }

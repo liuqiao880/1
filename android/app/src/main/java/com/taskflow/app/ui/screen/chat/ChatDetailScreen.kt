@@ -2,6 +2,7 @@ package com.taskflow.app.ui.screen.chat
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.taskflow.app.domain.model.ChatMessage
 import com.taskflow.app.domain.model.ChatRole
+import com.taskflow.app.domain.model.Task
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +69,7 @@ fun ChatDetailScreen(
     viewModel: ChatDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var inputText by remember { mutableStateOf("") }
+    var inputText by remember(chatId) { mutableStateOf("") }
     val listState = rememberLazyListState()
 
     LaunchedEffect(chatId) {
@@ -74,8 +77,9 @@ fun ChatDetailScreen(
     }
 
     LaunchedEffect(uiState.messages.size, uiState.isLoading) {
-        if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.size - 1)
+        val targetIndex = if (uiState.isLoading) uiState.messages.size else uiState.messages.size - 1
+        if (targetIndex >= 0) {
+            listState.animateScrollToItem(targetIndex)
         }
     }
 
@@ -155,7 +159,9 @@ fun ChatDetailScreen(
                 .padding(padding)
         ) {
             if (uiState.messages.isEmpty() && !uiState.isLoading) {
-                EmptyMessageState()
+                EmptyMessageState(onSuggestionClick = { suggestion ->
+                    viewModel.sendMessage(suggestion)
+                })
             } else {
                 LazyColumn(
                     state = listState,
@@ -184,7 +190,7 @@ fun ChatDetailScreen(
 }
 
 @Composable
-fun EmptyMessageState() {
+fun EmptyMessageState(onSuggestionClick: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -226,12 +232,12 @@ fun EmptyMessageState() {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
-        SuggestionChips()
+        SuggestionChips(onSuggestionClick = onSuggestionClick)
     }
 }
 
 @Composable
-fun SuggestionChips() {
+fun SuggestionChips(onSuggestionClick: (String) -> Unit) {
     val suggestions = listOf(
         "我要学习一门新技能",
         "帮我规划一个项目",
@@ -244,6 +250,7 @@ fun SuggestionChips() {
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .clickable { onSuggestionClick(suggestion) }
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -258,7 +265,7 @@ fun SuggestionChips() {
 }
 
 @Composable
-fun MessageBubble(message: ChatMessage) {
+fun MessageBubble(message: ChatMessage, onAddTasks: (List<Task>) -> Unit = {}) {
     val isUser = message.role == ChatRole.USER
 
     Row(
@@ -311,12 +318,45 @@ fun MessageBubble(message: ChatMessage) {
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
-            Text(
-                text = message.content,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
-                lineHeight = 20.sp
-            )
+            Column {
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 20.sp
+                )
+                if (!isUser && message.suggestedTasks != null && message.suggestedTasks.isNotEmpty()) {
+                    Column {
+                        message.suggestedTasks.forEach { task ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = task.title,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        TextButton(onClick = { onAddTasks(message.suggestedTasks) }) {
+                            Text("添加到任务列表", color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
         }
 
         if (isUser) {

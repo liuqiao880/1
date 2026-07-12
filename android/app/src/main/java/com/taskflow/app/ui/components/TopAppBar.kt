@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.DarkMode
@@ -110,20 +111,24 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit,
     onClose: () -> Unit
 ) {
-    androidx.compose.material3.SearchBar(
-        query = query,
-        onQueryChange = onQueryChange,
-        onSearch = {},
-        active = true,
-        onActiveChange = {},
-        placeholder = { Text("搜索任务...") },
-        leadingIcon = {
-            Icon(Icons.Default.Search, contentDescription = null)
+    androidx.compose.material3.TopAppBar(
+        title = {
+            androidx.compose.material3.OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = { Text("搜索任务...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
         },
-        trailingIcon = {
+        navigationIcon = {
             IconButton(onClick = onClose) {
-                Text("取消")
+                Icon(Icons.Default.Close, contentDescription = "关闭")
             }
-        }
-    ) {}
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
 }

@@ -27,6 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -126,7 +127,14 @@ fun ChatListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (uiState.chats.isEmpty() && !uiState.isLoading) {
+            if (uiState.chats.isEmpty() && uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (uiState.chats.isEmpty()) {
                 EmptyChatState(
                     onNewChat = {
                         viewModel.createChat { chatId ->
@@ -220,8 +228,6 @@ fun ChatItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showDelete by remember { mutableStateOf(false) }
-
     Row(
         modifier = modifier
             .fillMaxWidth()

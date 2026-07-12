@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
@@ -40,7 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.taskflow.app.domain.model.PomodoroPhase
 import com.taskflow.app.domain.model.PomodoroState
 import com.taskflow.app.ui.theme.RedPriority
-import kotlin.math.min
 
 @Composable
 fun PomodoroPanel(
@@ -196,7 +196,7 @@ fun PomodoroPanel(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            if (state.isRunning) Icons.Default.Close else Icons.Default.PlayArrow,
+                            if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (state.isRunning) "暂停" else "开始",
                             tint = Color.White,
                             modifier = Modifier.size(32.dp)

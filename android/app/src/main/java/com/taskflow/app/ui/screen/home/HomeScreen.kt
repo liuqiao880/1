@@ -49,7 +49,7 @@ fun HomeScreen(
             floatingActionButton = {
                 if (!uiState.multiSelectMode) {
                     FloatingActionButton(
-                        onAddTask = { /* 普通任务添加 */ },
+                        onAddTask = { viewModel.openAddTask() },
                         onAiPlan = { viewModel.setShowAiModal(true) }
                     )
                 }
@@ -95,13 +95,27 @@ fun HomeScreen(
                     onDeleteTask = { viewModel.deleteTask(it) },
                     onStartPomodoro = { task ->
                         viewModel.startPomodoro(task.id, task.title)
+                    },
+                    onChildClick = { task ->
+                        if (uiState.multiSelectMode) {
+                            viewModel.toggleSelected(task.id)
+                        } else {
+                            viewModel.openEditTask(task)
+                        }
+                    },
+                    onChildChecked = { id ->
+                        if (uiState.multiSelectMode) {
+                            viewModel.toggleSelected(id)
+                        } else {
+                            viewModel.toggleTask(id)
+                        }
                     }
                 )
 
                 if (uiState.undoMessage != null) {
                     UndoSnackbar(
                         message = uiState.undoMessage!!,
-                        onUndo = { /* undo logic */ },
+                        onUndo = { viewModel.undoDelete() },
                         onDismiss = { viewModel.clearUndoMessage() }
                     )
                 }
@@ -136,7 +150,14 @@ fun HomeScreen(
         TaskEditModal(
             task = uiState.editingTask!!,
             onDismiss = { viewModel.closeEditTask() },
-            onSave = { task -> viewModel.updateTask(task) }
+            onSave = { task ->
+                if (uiState.editingTask?.id == 0) {
+                    viewModel.addTask(task)
+                } else {
+                    viewModel.updateTask(task)
+                }
+                viewModel.closeEditTask()
+            }
         )
     }
 

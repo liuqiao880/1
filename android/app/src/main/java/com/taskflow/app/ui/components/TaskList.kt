@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -59,6 +61,8 @@ fun TaskList(
     onTaskLongPress: (Task) -> Unit,
     onDeleteTask: (Int) -> Unit,
     onStartPomodoro: (Task) -> Unit,
+    onChildClick: (Task) -> Unit,
+    onChildChecked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (groupedTasks.isEmpty()) {
@@ -66,14 +70,15 @@ fun TaskList(
         return
     }
 
-    Column(modifier = modifier.padding(horizontal = 16.dp)) {
+    LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
         groupedTasks.forEach { (groupName, tasks) ->
-            TaskGroupHeader(
-                title = groupName,
-                count = tasks.size
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            tasks.forEach { task ->
+            item(key = "header_$groupName") {
+                TaskGroupHeader(title = groupName, count = tasks.size)
+            }
+            item(key = "spacer_$groupName") {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            itemsIndexed(tasks, key = { _, task -> task.id }) { index, task ->
                 TaskItem(
                     task = task,
                     isExpanded = expandedParents.contains(task.id),
@@ -84,11 +89,14 @@ fun TaskList(
                     onCheckedChange = { onTaskChecked(task.id) },
                     onLongPress = { onTaskLongPress(task) },
                     onDelete = { onDeleteTask(task.id) },
-                    onStartPomodoro = { onStartPomodoro(task) }
+                    onStartPomodoro = { onStartPomodoro(task) },
+                    onChildClick = onChildClick,
+                    onChildChecked = onChildChecked
                 )
-                Spacer(modifier = Modifier.height(12.dp))
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            item(key = "bottom_spacer_$groupName") {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }
@@ -132,6 +140,8 @@ fun TaskItem(
     onLongPress: () -> Unit,
     onDelete: () -> Unit,
     onStartPomodoro: () -> Unit,
+    onChildClick: (Task) -> Unit,
+    onChildChecked: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val priorityColor = when (task.priority) {
@@ -306,8 +316,8 @@ fun TaskItem(
                         task = child,
                         isSelected = selectedTasks.contains(child.id),
                         multiSelectMode = multiSelectMode,
-                        onClick = { onClick() },
-                        onCheckedChange = { onCheckedChange() }
+                        onClick = { onChildClick(child) },
+                        onCheckedChange = { onChildChecked(child.id) }
                     )
                 }
             }

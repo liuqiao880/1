@@ -31,6 +31,14 @@ fun TaskEditModal(
     var title by remember(task) { mutableStateOf(task.title) }
     var description by remember(task) { mutableStateOf(task.description ?: "") }
     var priority by remember(task) { mutableStateOf(task.priority) }
+    var dueDateText by remember(task) {
+        mutableStateOf(
+            task.dueDate?.let {
+                java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                    .format(java.util.Date(it))
+            } ?: ""
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -50,6 +58,14 @@ fun TaskEditModal(
                     onValueChange = { description = it },
                     label = { Text("描述") },
                     minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = dueDateText,
+                    onValueChange = { dueDateText = it },
+                    label = { Text("截止日期 (yyyy-MM-dd)") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -73,7 +89,14 @@ fun TaskEditModal(
                         task.copy(
                             title = title,
                             description = description.ifBlank { null },
-                            priority = priority
+                            priority = priority,
+                            dueDate = try {
+                                if (dueDateText.isBlank()) null
+                                else java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                    .parse(dueDateText)?.time
+                            } catch (e: Exception) {
+                                task.dueDate
+                            }
                         )
                     )
                 },
