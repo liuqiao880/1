@@ -57,28 +57,28 @@ export default function AiPlanModal() {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* 遮罩 */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
         onClick={close}
       />
 
       {/* 弹窗内容 */}
-      <div className="relative w-full sm:max-w-md bg-white dark:bg-gray-900 sm:rounded-3xl rounded-t-3xl shadow-2xl animate-slideUp max-h-[85vh] flex flex-col">
+      <div className="relative w-full sm:max-w-md bg-paper-cream dark:bg-gray-900 sm:rounded-sm shadow-2xl animate-slideUp max-h-[85vh] flex flex-col border border-line-separator dark:border-gray-800">
         {/* 头部 */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-              <Sparkles size={18} />
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-line-separator dark:border-gray-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-newspaper-red flex items-center justify-center text-white">
+              <Sparkles size={16} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">AI 智能规划</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">输入目标，AI 为你拆解</p>
+              <h2 className="font-serif text-lg font-semibold text-ink-black dark:text-white leading-none">AI 智能规划</h2>
+              <p className="text-xs text-ink-light dark:text-gray-400 font-sans mt-1">输入目标，AI 为你拆解</p>
             </div>
           </div>
           <button
             onClick={close}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors active:scale-90"
+            className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors active:scale-90"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={18} className="text-ink-light" />
           </button>
         </div>
 
@@ -87,7 +87,7 @@ export default function AiPlanModal() {
           {step === 'form' && (
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
                   任务目标
                 </label>
                 <input
@@ -95,12 +95,12 @@ export default function AiPlanModal() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="例如：完成毕业论文"
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all font-sans text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
                   补充说明（选填）
                 </label>
                 <textarea
@@ -108,12 +108,12 @@ export default function AiPlanModal() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="描述更多细节，让 AI 规划更精准"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all resize-none"
+                  className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all resize-none font-sans text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
                   <span className="flex items-center gap-1">
                     <Calendar size={14} />
                     截止日期（选填）
@@ -123,7 +123,7 @@ export default function AiPlanModal() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+                  className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all font-sans text-sm"
                 />
               </div>
             </div>
@@ -133,18 +133,18 @@ export default function AiPlanModal() {
             <div className="py-10 space-y-4">
               <div className="flex items-center justify-center mb-6">
                 <div className="relative w-16 h-16">
-                  <div className="absolute inset-0 rounded-full border-4 border-purple-100 dark:border-purple-900" />
-                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-purple-500 animate-spin" />
+                  <div className="absolute inset-0 border-4 border-newspaper-red/10" />
+                  <div className="absolute inset-0 border-4 border-transparent border-t-newspaper-red animate-spin" />
                   <Sparkles
                     size={24}
-                    className="absolute inset-0 m-auto text-purple-500 animate-pulse"
+                    className="absolute inset-0 m-auto text-newspaper-red animate-pulse"
                   />
                 </div>
               </div>
-              <p className="text-center text-gray-600 dark:text-gray-300 font-medium">
+              <p className="text-center text-ink-gray dark:text-gray-300 font-serif font-medium">
                 AI 正在为你规划任务...
               </p>
-              <p className="text-center text-sm text-gray-400 dark:text-gray-500">
+              <p className="text-center text-sm text-ink-light dark:text-gray-500 font-sans">
                 预计需要几秒钟
               </p>
 
@@ -153,7 +153,7 @@ export default function AiPlanModal() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-14 rounded-xl bg-gray-100 dark:bg-gray-800 shimmer"
+                    className="h-12 bg-paper-white dark:bg-gray-800 shimmer border border-line-separator dark:border-gray-800"
                     style={{ animationDelay: `${i * 100}ms` }}
                   />
                 ))}
@@ -164,14 +164,14 @@ export default function AiPlanModal() {
           {step === 'preview' && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="font-serif font-semibold text-ink-black dark:text-white text-sm">
                   已生成 {generatedTasks.length} 个子任务
                 </h3>
                 <button
                   onClick={handleGenerate}
-                  className="flex items-center gap-1 text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                  className="flex items-center gap-1 text-xs text-newspaper-red dark:text-newspaper-red-light hover:underline font-sans"
                 >
-                  <RefreshCw size={14} />
+                  <RefreshCw size={12} />
                   重新生成
                 </button>
               </div>
@@ -181,48 +181,48 @@ export default function AiPlanModal() {
                   <div
                     key={task.id}
                     onClick={() => toggleTask(task.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`flex items-center gap-3 p-3 border transition-all cursor-pointer ${
                       task.selected
-                        ? 'bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800'
-                        : 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-700 opacity-60'
+                        ? 'bg-newspaper-red/5 dark:bg-newspaper-red/10 border-newspaper-red/20 dark:border-newspaper-red/30'
+                        : 'bg-paper-white dark:bg-gray-800/50 border-line-separator dark:border-gray-700 opacity-60'
                     }`}
                   >
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                         task.selected
-                          ? 'bg-purple-500 border-purple-500'
-                          : 'border-gray-300 dark:border-gray-500'
+                          ? 'bg-ink-black border-ink-black'
+                          : 'border-ink-light dark:border-gray-500'
                       }`}
                     >
                       <Check
                         size={11}
-                        className={`text-white transition-all ${
+                        className={`text-paper-white transition-all ${
                           task.selected ? 'opacity-100' : 'opacity-0'
                         }`}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-sm font-medium ${
+                        className={`text-sm font-sans ${
                           task.selected
-                            ? 'text-gray-900 dark:text-white'
-                            : 'text-gray-500 dark:text-gray-400 line-through'
+                            ? 'text-ink-black dark:text-white'
+                            : 'text-ink-light dark:text-gray-400 line-through'
                         }`}
                       >
                         {task.title}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      <p className="text-xs text-ink-light dark:text-gray-500 mt-0.5 font-sans">
                         第 {index + 1} 天
                       </p>
                     </div>
-                    <span className="text-xs text-purple-500 dark:text-purple-400 px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30">
+                    <span className="text-[10px] text-newspaper-red dark:text-newspaper-red-light px-1.5 py-0.5 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5 font-sans">
                       AI
                     </span>
                   </div>
                 ))}
               </div>
 
-              <p className="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
+              <p className="mt-4 text-xs text-ink-light dark:text-gray-500 text-center font-sans">
                 点击任务可取消勾选，确认后将保存选中的任务
               </p>
             </div>
@@ -230,27 +230,27 @@ export default function AiPlanModal() {
         </div>
 
         {/* 底部按钮 */}
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-6 py-4 border-t border-line-separator dark:border-gray-800">
           {step === 'form' && (
             <button
               onClick={handleGenerate}
               disabled={!title.trim()}
-              className={`w-full h-12 rounded-xl font-semibold text-white transition-all active:scale-[0.98] ${
+              className={`w-full h-11 font-serif font-semibold text-paper-white transition-all active:scale-[0.98] text-sm ${
                 title.trim()
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30'
-                  : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                  ? 'bg-ink-black hover:bg-newspaper-red'
+                  : 'bg-line-separator dark:bg-gray-700 cursor-not-allowed'
               }`}
             >
-              ✨ 开始规划
+              开始规划
             </button>
           )}
 
           {step === 'loading' && (
             <button
               disabled
-              className="w-full h-12 rounded-xl font-semibold text-white bg-gray-300 dark:bg-gray-700 cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full h-11 font-serif font-semibold text-paper-white bg-line-separator dark:bg-gray-700 cursor-not-allowed flex items-center justify-center gap-2 text-sm"
             >
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-paper-white/30 border-t-paper-white rounded-full animate-spin" />
               规划中...
             </button>
           )}
@@ -259,17 +259,17 @@ export default function AiPlanModal() {
             <div className="flex gap-3">
               <button
                 onClick={() => setStep('form')}
-                className="flex-1 h-12 rounded-xl font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+                className="flex-1 h-11 font-serif font-semibold text-ink-gray dark:text-gray-300 bg-transparent border border-line-separator dark:border-gray-700 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-[0.98] text-sm"
               >
                 返回修改
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={generatedTasks.filter((t) => t.selected).length === 0}
-                className={`flex-1 h-12 rounded-xl font-semibold text-white transition-all active:scale-[0.98] ${
+                className={`flex-1 h-11 font-serif font-semibold text-paper-white transition-all active:scale-[0.98] text-sm ${
                   generatedTasks.filter((t) => t.selected).length > 0
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/25 hover:shadow-xl'
-                    : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                    ? 'bg-ink-black hover:bg-newspaper-red'
+                    : 'bg-line-separator dark:bg-gray-700 cursor-not-allowed'
                 }`}
               >
                 确认保存

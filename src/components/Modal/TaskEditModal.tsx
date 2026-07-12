@@ -9,10 +9,10 @@ interface TaskEditModalProps {
   onSave: (task: Task) => void;
 }
 
-const priorityOptions: { value: TaskPriority; label: string; color: string }[] = [
-  { value: 1, label: '紧急', color: 'bg-red-500' },
-  { value: 2, label: '普通', color: 'bg-yellow-500' },
-  { value: 3, label: '低优', color: 'bg-blue-500' },
+const priorityOptions: { value: TaskPriority; label: string; color: string; textColor: string }[] = [
+  { value: 1, label: '紧急', color: 'bg-priority-high', textColor: 'text-priority-high' },
+  { value: 2, label: '普通', color: 'bg-priority-medium', textColor: 'text-priority-medium' },
+  { value: 3, label: '低优', color: 'bg-priority-low', textColor: 'text-priority-low' },
 ];
 
 export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEditModalProps) {
@@ -49,48 +49,51 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-fadeIn"
         onClick={onClose}
       />
 
-      <div className="relative w-full sm:max-w-md bg-white dark:bg-gray-900 sm:rounded-3xl rounded-t-3xl shadow-2xl animate-slideUp max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">编辑任务</h2>
+      <div className="relative w-full sm:max-w-md bg-paper-cream dark:bg-gray-900 sm:rounded-sm shadow-2xl animate-slideUp max-h-[85vh] flex flex-col border border-line-separator dark:border-gray-800">
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-line-separator dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <div className="newspaper-accent-line" />
+            <h2 className="font-serif text-lg font-semibold text-ink-black dark:text-white">编辑任务</h2>
+          </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors active:scale-90"
+            className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors active:scale-90"
           >
-            <X size={20} className="text-gray-500" />
+            <X size={18} className="text-ink-light" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
               任务标题
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
+              className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all font-sans text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
               描述
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all resize-none"
+              className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all resize-none font-sans text-sm"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="flex items-center gap-1 text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
               <Calendar size={14} />
               截止日期
             </label>
@@ -98,12 +101,12 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500 transition-all"
+              className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all font-sans text-sm"
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="flex items-center gap-1 text-sm font-serif font-medium text-ink-gray dark:text-gray-300 mb-2">
               <Flag size={14} />
               优先级
             </label>
@@ -112,10 +115,10 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
                 <button
                   key={opt.value}
                   onClick={() => setPriority(opt.value)}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex-1 py-2.5 text-sm font-medium font-sans transition-all border ${
                     priority === opt.value
-                      ? `${opt.color} text-white shadow-md`
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                      ? `${opt.color} text-paper-white border-transparent`
+                      : 'bg-transparent text-ink-gray dark:text-gray-400 border-line-separator dark:border-gray-700 hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
                 >
                   {opt.label}
@@ -125,30 +128,30 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
           </div>
 
           {task.aiGenerated && (
-            <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-purple-50 dark:bg-purple-950/30">
-              <Sparkles size={16} className="text-purple-500" />
-              <span className="text-sm text-purple-700 dark:text-purple-300">
+            <div className="flex items-center gap-2 px-4 py-3 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5">
+              <Sparkles size={16} className="text-newspaper-red dark:text-newspaper-red-light" />
+              <span className="text-sm text-newspaper-red dark:text-newspaper-red-light font-sans">
                 此任务由 AI 生成
               </span>
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-6 py-4 border-t border-line-separator dark:border-gray-800">
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 h-12 rounded-xl font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+              className="flex-1 h-11 font-serif font-semibold text-ink-gray dark:text-gray-300 bg-transparent border border-line-separator dark:border-gray-700 hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-[0.98] text-sm"
             >
               取消
             </button>
             <button
               onClick={handleSave}
               disabled={!title.trim()}
-              className={`flex-1 h-12 rounded-xl font-semibold text-white transition-all active:scale-[0.98] ${
+              className={`flex-1 h-11 font-serif font-semibold text-paper-white transition-all active:scale-[0.98] text-sm ${
                 title.trim()
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 shadow-lg shadow-green-500/25 hover:shadow-xl'
-                  : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                  ? 'bg-ink-black hover:bg-newspaper-red'
+                  : 'bg-line-separator dark:bg-gray-700 cursor-not-allowed'
               }`}
             >
               保存
