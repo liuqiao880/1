@@ -3,6 +3,47 @@ import { persist } from 'zustand/middleware';
 import { Task, FilterType, ThemeType, AccentColor } from '@/types/task';
 import { mockTasks } from '@/data/mockTasks';
 
+let dailyNotificationTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleDailyNotification() {
+  clearDailyNotification();
+  const now = new Date();
+  const next8am = new Date();
+  next8am.setHours(8, 0, 0, 0);
+  if (next8am <= now) {
+    next8am.setDate(next8am.getDate() + 1);
+  }
+  const msUntil8am = next8am.getTime() - now.getTime();
+
+  dailyNotificationTimer = setTimeout(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      const pendingTasks = useTaskStore.getState().tasks.filter(
+        (t) => t.status === 'todo'
+      );
+      new Notification('TaskFlow 今日待办', {
+        body: `你还有 ${pendingTasks.length} 个待办任务，加油！`,
+      });
+    }
+    setInterval(() => {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        const pendingTasks = useTaskStore.getState().tasks.filter(
+          (t) => t.status === 'todo'
+        );
+        new Notification('TaskFlow 今日待办', {
+          body: `你还有 ${pendingTasks.length} 个待办任务，加油！`,
+        });
+      }
+    }, 24 * 60 * 60 * 1000);
+  }, msUntil8am);
+}
+
+function clearDailyNotification() {
+  if (dailyNotificationTimer) {
+    clearTimeout(dailyNotificationTimer);
+    dailyNotificationTimer = null;
+  }
+}
+
 interface AppState {
   tasks: Task[];
   filter: FilterType;
@@ -15,6 +56,7 @@ interface AppState {
   showSearch: boolean;
   showSettings: boolean;
   showEditModal: boolean;
+  showAddTaskModal: boolean;
   editingTask: Task | null;
   selectedTasks: number[];
   multiSelectMode: boolean;
@@ -31,6 +73,7 @@ interface AppState {
   setShowSearch: (show: boolean) => void;
   setShowSettings: (show: boolean) => void;
   openEditModal: (task: Task) => void;
+  openAddTaskModal: () => void;
   closeEditModal: () => void;
   updateTask: (task: Task) => void;
   addTask: (task: Task) => void;
@@ -80,6 +123,7 @@ export const useTaskStore = create<AppState>()(
       showSearch: false,
       showSettings: false,
       showEditModal: false,
+      showAddTaskModal: false,
       editingTask: null,
       selectedTasks: [],
       multiSelectMode: false,
@@ -121,7 +165,29 @@ export const useTaskStore = create<AppState>()(
       },
 
       toggleNotification: () => {
-        set({ notificationEnabled: !get().notificationEnabled });
+        const next = !get().notificationEnabled;
+        set({ notificationEnabled: next });
+
+        if (next && typeof window !== 'undefined' && 'Notification' in window) {
+          if (Notification.permission === 'default') {
+            Notification.requestPermission().then((permission) => {
+              if (permission === 'granted') {
+                new Notification('TaskFlow 每日提醒已开启', {
+                  body: '每天早晨 8:00 将为你推送今日待办',
+                });
+                scheduleDailyNotification();
+              } else {
+                set({ notificationEnabled: false });
+              }
+            });
+          } else if (Notification.permission === 'granted') {
+            scheduleDailyNotification();
+          }
+        } else if (next && typeof window !== 'undefined' && !('Notification' in window)) {
+          set({ notificationEnabled: false });
+        } else if (!next) {
+          clearDailyNotification();
+        }
       },
 
       setSearchQuery: (q: string) => set({ searchQuery: q }),
@@ -136,8 +202,12 @@ export const useTaskStore = create<AppState>()(
         set({ editingTask: task, showEditModal: true });
       },
 
+      openAddTaskModal: () => {
+        set({ showAddTaskModal: true });
+      },
+
       closeEditModal: () => {
-        set({ showEditModal: false, editingTask: null });
+        set({ showEditModal: false, showAddTaskModal: false, editingTask: null });
       },
 
       updateTask: (updated: Task) => {

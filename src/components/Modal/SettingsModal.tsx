@@ -1,5 +1,6 @@
-import { X, Moon, Sun, Bell, Palette, Key, Info, ChevronRight, Shield } from 'lucide-react';
+import { X, Moon, Sun, Bell, Palette, Key, Info, Shield, Check } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
+import { useChatStore } from '@/store/useChatStore';
 import { useState } from 'react';
 import { AccentColor } from '@/types/task';
 
@@ -21,12 +22,14 @@ export default function SettingsModal() {
     notificationEnabled,
     toggleNotification,
   } = useTaskStore();
-  const [aiConfig, setAiConfig] = useState({
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    apiKey: '',
-    model: 'gpt-4o-mini',
-  });
+  const { aiConfig, updateAiConfig } = useChatStore();
+  const [savedTip, setSavedTip] = useState(false);
+
+  const handleAiConfigChange = (field: string, value: string) => {
+    updateAiConfig({ [field]: value });
+    setSavedTip(true);
+    setTimeout(() => setSavedTip(false), 1500);
+  };
 
   if (!showSettings) return null;
 
@@ -153,7 +156,7 @@ export default function SettingsModal() {
                     </label>
                     <select
                       value={aiConfig.provider}
-                      onChange={(e) => setAiConfig({ ...aiConfig, provider: e.target.value })}
+                      onChange={(e) => handleAiConfigChange('provider', e.target.value)}
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     >
                       <option value="openai">OpenAI 兼容</option>
@@ -170,7 +173,7 @@ export default function SettingsModal() {
                     <input
                       type="text"
                       value={aiConfig.baseUrl}
-                      onChange={(e) => setAiConfig({ ...aiConfig, baseUrl: e.target.value })}
+                      onChange={(e) => handleAiConfigChange('baseUrl', e.target.value)}
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     />
                   </div>
@@ -182,7 +185,7 @@ export default function SettingsModal() {
                     <input
                       type="password"
                       value={aiConfig.apiKey}
-                      onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
+                      onChange={(e) => handleAiConfigChange('apiKey', e.target.value)}
                       placeholder="sk-..."
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     />
@@ -195,11 +198,20 @@ export default function SettingsModal() {
                     <input
                       type="text"
                       value={aiConfig.model}
-                      onChange={(e) => setAiConfig({ ...aiConfig, model: e.target.value })}
+                      onChange={(e) => handleAiConfigChange('model', e.target.value)}
                       className="w-full px-3 py-2 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white outline-none focus:border-newspaper-red/40 font-sans"
                     />
                   </div>
                 </div>
+
+                {savedTip && (
+                  <div className="mt-3 flex items-center gap-2 p-2 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5">
+                    <Check size={14} className="text-newspaper-red" />
+                    <p className="text-xs text-newspaper-red dark:text-newspaper-red-light font-sans">
+                      配置已保存
+                    </p>
+                  </div>
+                )}
 
                 <div className="mt-3 flex items-start gap-2 p-3 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5">
                   <Shield size={14} className="text-newspaper-red mt-0.5 flex-shrink-0" />
@@ -267,7 +279,6 @@ export default function SettingsModal() {
                     <p className="text-xs text-ink-light dark:text-gray-400 font-sans">TaskFlow v0.5.0</p>
                   </div>
                 </div>
-                <ChevronRight size={16} className="text-ink-light" />
               </div>
             </div>
           </div>

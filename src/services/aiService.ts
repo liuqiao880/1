@@ -40,7 +40,8 @@ export const aiService = {
     const { apiKey, baseUrl, model, systemPrompt = DEFAULT_SYSTEM_PROMPT } = config;
 
     if (!apiKey) {
-      return this.mockResponse(messages);
+      const mock = this.mockResponse(messages);
+      return `> ⚠️ **演示模式**：未配置 API Key，以下为模拟数据。请在设置中配置 AI API 以使用真实规划。\n\n${mock}`;
     }
 
     try {
@@ -61,14 +62,17 @@ export const aiService = {
       });
 
       if (!response.ok) {
-        throw new Error(`API 请求失败: ${response.status}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`API 请求失败 (${response.status}): ${errorText.slice(0, 100)}`);
       }
 
       const data = await response.json();
       return data.choices?.[0]?.message?.content || '';
     } catch (error) {
-      console.error('AI 请求失败，使用模拟数据:', error);
-      return this.mockResponse(messages);
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('网络请求失败，请检查 Base URL 是否正确或网络连接');
+      }
+      throw error;
     }
   },
 

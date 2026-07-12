@@ -4,7 +4,7 @@ import { useTaskStore } from '@/store/useTaskStore';
 
 export default function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const { setShowAiModal } = useTaskStore();
+  const { setShowAiModal, openAddTaskModal } = useTaskStore();
 
   const toggle = () => setIsOpen(!isOpen);
 
@@ -14,7 +14,7 @@ export default function FloatingActionButton() {
   };
 
   const handleQuickAdd = () => {
-    alert('快速添加任务（演示）');
+    openAddTaskModal();
     setIsOpen(false);
   };
 

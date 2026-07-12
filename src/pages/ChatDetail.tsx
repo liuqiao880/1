@@ -21,12 +21,14 @@ import { ChatMessage, Task } from '@/types/task';
 export default function ChatDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { chats, sendMessage, isLoading, createChat } = useChatStore();
+  const { chats, sendMessage, regenerateLastResponse, isLoading, createChat } = useChatStore();
   const { addTask } = useTaskStore();
   const [input, setInput] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [importToast, setImportToast] = useState<{ show: boolean; count: number }>({ show: false, count: 0 });
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const chat = chats.find((c) => c.id === id);
 
@@ -56,9 +58,52 @@ export default function ChatDetail() {
   };
 
   const handleRegenerate = async () => {
-    if (!chat || chat.messages.length < 2) return;
-    const lastUserIndex = [...chat.messages].reverse().findIndex((m) => m.role === 'user');
-    if (lastUserIndex === -1) return;
+    if (!chat || !id || isLoading) return;
+    await regenerateLastResponse(id);
+  };
+
+  const handleQuickQuestion = (question: string) => {
+    setInput(question);
+  };
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('当前浏览器不支持语音输入，请使用 Chrome 或 Edge');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'zh-CN';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(transcript);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('语音识别错误:', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const handleCopy = async (msg: ChatMessage) => {
@@ -127,6 +172,7 @@ export default function ChatDetail() {
               copiedId={copiedId}
               onRegenerate={handleRegenerate}
               onImport={handleImportTasks}
+              onQuickQuestion={handleQuickQuestion}
               messagesEndRef={messagesEndRef}
             />
             <InputBar
@@ -135,6 +181,8 @@ export default function ChatDetail() {
               onSend={handleSend}
               onKeyDown={handleKeyDown}
               isLoading={isLoading}
+              isListening={isListening}
+              onVoiceInput={toggleVoiceInput}
             />
             {importToast.show && (
               <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-ink-black/90 dark:bg-white/90 text-paper-white dark:text-ink-black text-xs font-medium shadow-lg border border-line-separator z-50 animate-[fadeInUp_0.3s_ease]">
@@ -161,6 +209,7 @@ export default function ChatDetail() {
           copiedId={copiedId}
           onRegenerate={handleRegenerate}
           onImport={handleImportTasks}
+          onQuickQuestion={handleQuickQuestion}
           messagesEndRef={messagesEndRef}
         />
         <InputBar
@@ -169,6 +218,8 @@ export default function ChatDetail() {
           onSend={handleSend}
           onKeyDown={handleKeyDown}
           isLoading={isLoading}
+          isListening={isListening}
+          onVoiceInput={toggleVoiceInput}
         />
         {importToast.show && (
           <div className="absolute bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-ink-black/90 dark:bg-white/90 text-paper-white dark:text-ink-black text-xs font-medium shadow-lg border border-line-separator z-50 animate-[fadeInUp_0.3s_ease]">
@@ -222,6 +273,7 @@ function MessageList({
   copiedId,
   onRegenerate,
   onImport,
+  onQuickQuestion,
   messagesEndRef,
 }: {
   messages: ChatMessage[];
@@ -230,6 +282,7 @@ function MessageList({
   copiedId: string | null;
   onRegenerate: () => void;
   onImport: (tasks: Task[], selected: Set<number>) => void;
+  onQuickQuestion: (question: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }) {
   if (messages.length === 0) {
@@ -246,7 +299,8 @@ function MessageList({
           {['我要学习一门新技能', '帮我规划一个项目', '制定健身计划'].map((q, i) => (
             <button
               key={q}
-              className="w-full text-left px-3 py-2.5 border border-line-separator dark:border-gray-700 hover:bg-paper-cream dark:hover:bg-gray-800 text-xs text-ink-gray dark:text-gray-300 transition-all active:scale-[0.99] font-sans"
+              onClick={() => onQuickQuestion(q)}
+              className="w-full text-left px-3 py-2.5 border border-line-separator dark:border-gray-700 hover:bg-paper-cream dark:hover:bg-gray-800 hover:border-newspaper-red/30 text-xs text-ink-gray dark:text-gray-300 transition-all active:scale-[0.99] font-sans"
               style={{ animation: `fadeInUp 0.5s ease ${i * 0.1}s both` }}
             >
               {q}
@@ -550,12 +604,16 @@ function InputBar({
   onSend,
   onKeyDown,
   isLoading,
+  isListening,
+  onVoiceInput,
 }: {
   input: string;
   setInput: (v: string) => void;
   onSend: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
   isLoading: boolean;
+  isListening: boolean;
+  onVoiceInput: () => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -569,8 +627,15 @@ function InputBar({
   return (
     <div className="border-t border-line-separator dark:border-gray-800 p-3 flex-shrink-0 bg-paper-white dark:bg-gray-900">
       <div className="flex items-end gap-2">
-        <button className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 flex-shrink-0">
-          <Mic size={18} className="text-ink-light" />
+        <button
+          onClick={onVoiceInput}
+          className={`w-9 h-9 flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${
+            isListening
+              ? 'bg-newspaper-red text-paper-white animate-pulse'
+              : 'hover:bg-black/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <Mic size={18} className={isListening ? 'text-paper-white' : 'text-ink-light'} />
         </button>
         <div className="flex-1 relative">
           <textarea
@@ -578,7 +643,7 @@ function InputBar({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="说说你的目标..."
+            placeholder={isListening ? '正在聆听...' : '说说你的目标...'}
             rows={1}
             className="w-full px-3 py-2 bg-paper-cream dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-sm text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 resize-none max-h-32 font-sans"
             style={{ minHeight: '38px' }}
@@ -593,8 +658,15 @@ function InputBar({
             <Send size={16} />
           </button>
         ) : (
-          <button className="w-9 h-9 flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95 flex-shrink-0">
-            <Mic size={18} className="text-ink-light" />
+          <button
+            onClick={onVoiceInput}
+            className={`w-9 h-9 flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${
+              isListening
+                ? 'bg-newspaper-red text-paper-white animate-pulse'
+                : 'hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            <Mic size={18} className={isListening ? 'text-paper-white' : 'text-ink-light'} />
           </button>
         )}
       </div>

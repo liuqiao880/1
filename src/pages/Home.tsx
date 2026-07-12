@@ -121,13 +121,20 @@ export default function Home() {
 }
 
 function TaskEditModalWrapper() {
-  const { showEditModal, editingTask, closeEditModal, updateTask } = useTaskStore();
+  const { showEditModal, showAddTaskModal, editingTask, closeEditModal, updateTask, addTask } = useTaskStore();
+  const isOpen = showEditModal || showAddTaskModal;
   return (
     <TaskEditModal
       task={editingTask}
-      isOpen={showEditModal}
+      isOpen={isOpen}
       onClose={closeEditModal}
-      onSave={(task) => updateTask(task)}
+      onSave={(task) => {
+        if (showAddTaskModal) {
+          addTask(task);
+        } else {
+          updateTask(task);
+        }
+      }}
     />
   );
 }

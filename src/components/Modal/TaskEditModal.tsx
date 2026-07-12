@@ -9,10 +9,10 @@ interface TaskEditModalProps {
   onSave: (task: Task) => void;
 }
 
-const priorityOptions: { value: TaskPriority; label: string; color: string; textColor: string }[] = [
-  { value: 1, label: '紧急', color: 'bg-priority-high', textColor: 'text-priority-high' },
-  { value: 2, label: '普通', color: 'bg-priority-medium', textColor: 'text-priority-medium' },
-  { value: 3, label: '低优', color: 'bg-priority-low', textColor: 'text-priority-low' },
+const priorityOptions: { value: TaskPriority; label: string; color: string }[] = [
+  { value: 1, label: '紧急', color: 'bg-priority-high' },
+  { value: 2, label: '普通', color: 'bg-priority-medium' },
+  { value: 3, label: '低优', color: 'bg-priority-low' },
 ];
 
 export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEditModalProps) {
@@ -20,6 +20,8 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>(2);
   const [dueDate, setDueDate] = useState('');
+
+  const isEditMode = !!task;
 
   useEffect(() => {
     if (task) {
@@ -29,22 +31,44 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
       setDueDate(
         task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
       );
+    } else {
+      setTitle('');
+      setDescription('');
+      setPriority(2);
+      setDueDate('');
     }
-  }, [task]);
+  }, [task, isOpen]);
 
   const handleSave = () => {
-    if (!title.trim() || !task) return;
-    onSave({
-      ...task,
-      title: title.trim(),
-      description: description.trim() || undefined,
-      priority,
-      dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-    });
+    if (!title.trim()) return;
+    const now = Date.now();
+    const savedTask: Task = task
+      ? {
+          ...task,
+          title: title.trim(),
+          description: description.trim() || undefined,
+          priority,
+          dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
+          updateTime: now,
+        }
+      : {
+          id: now + Math.floor(Math.random() * 100000),
+          title: title.trim(),
+          description: description.trim() || undefined,
+          status: 'todo',
+          priority,
+          dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
+          parentId: null,
+          order: 0,
+          aiGenerated: false,
+          createTime: now,
+          pomodoroCount: 0,
+        };
+    onSave(savedTask);
     onClose();
   };
 
-  if (!isOpen || !task) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -57,7 +81,9 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
         <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-line-separator dark:border-gray-800">
           <div className="flex items-center gap-2">
             <div className="newspaper-accent-line" />
-            <h2 className="font-serif text-lg font-semibold text-ink-black dark:text-white">编辑任务</h2>
+            <h2 className="font-serif text-lg font-semibold text-ink-black dark:text-white">
+              {isEditMode ? '编辑任务' : '新建任务'}
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -76,6 +102,8 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              autoFocus={!isEditMode}
+              placeholder="输入任务标题..."
               className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all font-sans text-sm"
             />
           </div>
@@ -88,6 +116,7 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              placeholder="添加任务描述（选填）..."
               className="w-full px-4 py-3 bg-paper-white dark:bg-gray-800 border border-line-separator dark:border-gray-700 text-ink-black dark:text-white placeholder-ink-light outline-none focus:border-newspaper-red/40 focus:ring-1 focus:ring-newspaper-red/20 transition-all resize-none font-sans text-sm"
             />
           </div>
@@ -127,7 +156,7 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
             </div>
           </div>
 
-          {task.aiGenerated && (
+          {isEditMode && task?.aiGenerated && (
             <div className="flex items-center gap-2 px-4 py-3 border border-newspaper-red/20 dark:border-newspaper-red/30 bg-newspaper-red/5">
               <Sparkles size={16} className="text-newspaper-red dark:text-newspaper-red-light" />
               <span className="text-sm text-newspaper-red dark:text-newspaper-red-light font-sans">
@@ -154,7 +183,7 @@ export default function TaskEditModal({ task, isOpen, onClose, onSave }: TaskEdi
                   : 'bg-line-separator dark:bg-gray-700 cursor-not-allowed'
               }`}
             >
-              保存
+              {isEditMode ? '保存' : '创建'}
             </button>
           </div>
         </div>
