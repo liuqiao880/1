@@ -13,6 +13,7 @@ import { useTaskStore } from '@/store/useTaskStore';
 export default function Home() {
   const {
     theme,
+    accentColor,
     multiSelectMode,
     selectedTasks,
     clearSelection,
@@ -28,6 +29,10 @@ export default function Home() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-accent', accentColor);
+  }, [accentColor]);
 
   const appContent = (
     <>

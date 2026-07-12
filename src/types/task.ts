@@ -2,6 +2,7 @@ export type TaskStatus = 'todo' | 'completed';
 export type TaskPriority = 1 | 2 | 3;
 export type FilterType = 'all' | 'today' | 'tomorrow' | 'week';
 export type ThemeType = 'light' | 'dark';
+export type AccentColor = 'red' | 'ink' | 'gold' | 'blue';
 
 export interface Task {
   id: number;

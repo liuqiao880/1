@@ -10,9 +10,9 @@ export default {
     extend: {
       colors: {
         newspaper: {
-          red: '#C41E3A',
-          'red-dark': '#8B0000',
-          'red-light': '#E63946',
+          red: 'var(--color-accent)',
+          'red-dark': 'var(--color-accent-dark)',
+          'red-light': 'var(--color-accent-light)',
         },
         ink: {
           black: '#1A1A1A',

@@ -15,6 +15,41 @@
   -webkit-tap-highlight-color: transparent;
   background-color: #FAFAFA;
   color: #1A1A1A;
+
+  /* 主题色变量 - 默认报纸红 */
+  --color-accent: #C41E3A;
+  --color-accent-dark: #8B0000;
+  --color-accent-light: #E63946;
+  --color-accent-rgb: 196, 30, 58;
+}
+
+/* 主题色变体 */
+[data-accent="red"] {
+  --color-accent: #C41E3A;
+  --color-accent-dark: #8B0000;
+  --color-accent-light: #E63946;
+  --color-accent-rgb: 196, 30, 58;
+}
+
+[data-accent="ink"] {
+  --color-accent: #1A1A1A;
+  --color-accent-dark: #000000;
+  --color-accent-light: #4A4A4A;
+  --color-accent-rgb: 26, 26, 26;
+}
+
+[data-accent="gold"] {
+  --color-accent: #B8860B;
+  --color-accent-dark: #8B6508;
+  --color-accent-light: #D4A017;
+  --color-accent-rgb: 184, 134, 11;
+}
+
+[data-accent="blue"] {
+  --color-accent: #4682B4;
+  --color-accent-dark: #2F5F8F;
+  --color-accent-light: #6FA8DC;
+  --color-accent-rgb: 70, 130, 180;
 }
 
 /* 报纸风格标题字体 */

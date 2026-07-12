@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Task, FilterType, ThemeType } from '@/types/task';
+import { Task, FilterType, ThemeType, AccentColor } from '@/types/task';
 import { mockTasks } from '@/data/mockTasks';
 
 interface AppState {
   tasks: Task[];
   filter: FilterType;
   theme: ThemeType;
+  accentColor: AccentColor;
+  notificationEnabled: boolean;
   expandedParents: number[];
   searchQuery: string;
   showAiModal: boolean;
@@ -22,6 +24,8 @@ interface AppState {
   toggleExpand: (id: number) => void;
   setFilter: (filter: FilterType) => void;
   toggleTheme: () => void;
+  setAccentColor: (color: AccentColor) => void;
+  toggleNotification: () => void;
   setSearchQuery: (q: string) => void;
   setShowAiModal: (show: boolean) => void;
   setShowSearch: (show: boolean) => void;
@@ -68,6 +72,8 @@ export const useTaskStore = create<AppState>()(
       tasks: mockTasks,
       filter: 'all',
       theme: 'light',
+      accentColor: 'red',
+      notificationEnabled: true,
       expandedParents: [2, 4],
       searchQuery: '',
       showAiModal: false,
@@ -105,6 +111,17 @@ export const useTaskStore = create<AppState>()(
             document.documentElement.classList.remove('dark');
           }
         }
+      },
+
+      setAccentColor: (color: AccentColor) => {
+        set({ accentColor: color });
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-accent', color);
+        }
+      },
+
+      toggleNotification: () => {
+        set({ notificationEnabled: !get().notificationEnabled });
       },
 
       setSearchQuery: (q: string) => set({ searchQuery: q }),
@@ -214,6 +231,8 @@ export const useTaskStore = create<AppState>()(
       partialize: (state) => ({
         tasks: state.tasks,
         theme: state.theme,
+        accentColor: state.accentColor,
+        notificationEnabled: state.notificationEnabled,
         expandedParents: state.expandedParents,
         filter: state.filter,
       }),

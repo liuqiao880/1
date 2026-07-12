@@ -1,9 +1,26 @@
 import { X, Moon, Sun, Bell, Palette, Key, Info, ChevronRight, Shield } from 'lucide-react';
 import { useTaskStore } from '@/store/useTaskStore';
 import { useState } from 'react';
+import { AccentColor } from '@/types/task';
+
+const accentColors: { key: AccentColor; label: string; value: string }[] = [
+  { key: 'red', label: '报纸红', value: '#C41E3A' },
+  { key: 'ink', label: '墨黑', value: '#1A1A1A' },
+  { key: 'gold', label: '暗金', value: '#B8860B' },
+  { key: 'blue', label: '钢蓝', value: '#4682B4' },
+];
 
 export default function SettingsModal() {
-  const { showSettings, setShowSettings, theme, toggleTheme } = useTaskStore();
+  const {
+    showSettings,
+    setShowSettings,
+    theme,
+    toggleTheme,
+    accentColor,
+    setAccentColor,
+    notificationEnabled,
+    toggleNotification,
+  } = useTaskStore();
   const [aiConfig, setAiConfig] = useState({
     provider: 'openai',
     baseUrl: 'https://api.openai.com/v1',
@@ -43,6 +60,7 @@ export default function SettingsModal() {
               外观
             </h3>
             <div className="border border-line-separator dark:border-gray-800">
+              {/* 主题模式 */}
               <button
                 onClick={toggleTheme}
                 className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-paper-white dark:hover:bg-gray-800/50 transition-colors"
@@ -79,24 +97,31 @@ export default function SettingsModal() {
 
               <div className="h-px bg-line-separator dark:bg-gray-800 mx-4" />
 
-              <div className="flex items-center justify-between px-4 py-3.5">
-                <div className="flex items-center gap-3">
+              {/* 主题色 - 可点击切换 */}
+              <div className="px-4 py-3.5">
+                <div className="flex items-center gap-3 mb-3">
                   <div className="w-9 h-9 bg-newspaper-red/10 dark:bg-newspaper-red/20 flex items-center justify-center">
                     <Palette size={18} className="text-newspaper-red dark:text-newspaper-red-light" />
                   </div>
                   <div className="text-left">
                     <p className="font-serif font-medium text-ink-black dark:text-white text-sm">主题色</p>
-                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">报纸红</p>
+                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">
+                      {accentColors.find((c) => c.key === accentColor)?.label || '报纸红'}
+                    </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  {['#C41E3A', '#1A1A1A', '#B8860B', '#4682B4'].map((color) => (
-                    <div
-                      key={color}
-                      className={`w-6 h-6 border-2 ${
-                        color === '#C41E3A' ? 'border-ink-black dark:border-white' : 'border-transparent'
+                <div className="flex gap-3 pl-12">
+                  {accentColors.map((color) => (
+                    <button
+                      key={color.key}
+                      onClick={() => setAccentColor(color.key)}
+                      className={`w-8 h-8 border-2 transition-all active:scale-90 ${
+                        accentColor === color.key
+                          ? 'border-ink-black dark:border-white scale-110'
+                          : 'border-transparent hover:scale-105'
                       }`}
-                      style={{ backgroundColor: color }}
+                      style={{ backgroundColor: color.value }}
+                      title={color.label}
                     />
                   ))}
                 </div>
@@ -186,26 +211,43 @@ export default function SettingsModal() {
             </div>
           </div>
 
-          {/* 通知 */}
+          {/* 通知 - 可开关 */}
           <div className="px-6 py-4">
             <h3 className="font-serif text-xs font-semibold text-ink-gray dark:text-gray-400 uppercase tracking-wider mb-3">
               通知
             </h3>
             <div className="border border-line-separator dark:border-gray-800">
-              <div className="flex items-center justify-between px-4 py-3.5">
+              <button
+                onClick={toggleNotification}
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-paper-white dark:hover:bg-gray-800/50 transition-colors"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-ink-black/5 dark:bg-white/10 flex items-center justify-center">
-                    <Bell size={18} className="text-ink-gray dark:text-gray-300" />
+                  <div className={`w-9 h-9 flex items-center justify-center transition-colors ${
+                    notificationEnabled
+                      ? 'bg-newspaper-red/10 dark:bg-newspaper-red/20'
+                      : 'bg-ink-black/5 dark:bg-white/10'
+                  }`}>
+                    <Bell size={18} className={notificationEnabled ? 'text-newspaper-red dark:text-newspaper-red-light' : 'text-ink-light'} />
                   </div>
                   <div className="text-left">
                     <p className="font-serif font-medium text-ink-black dark:text-white text-sm">每日提醒</p>
-                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">早晨 8:00 推送今日待办</p>
+                    <p className="text-xs text-ink-light dark:text-gray-400 font-sans">
+                      {notificationEnabled ? '早晨 8:00 推送今日待办' : '已关闭'}
+                    </p>
                   </div>
                 </div>
-                <div className="w-11 h-6 p-0.5 bg-ink-black">
-                  <div className="w-5 h-5 bg-paper-white shadow-sm translate-x-5" />
+                <div
+                  className={`w-11 h-6 p-0.5 transition-colors ${
+                    notificationEnabled ? 'bg-ink-black' : 'bg-line-separator dark:bg-gray-600'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 bg-paper-white shadow-sm transition-transform ${
+                      notificationEnabled ? 'translate-x-5' : ''
+                    }`}
+                  />
                 </div>
-              </div>
+              </button>
             </div>
           </div>
 
