@@ -6,10 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-
-val NewspaperRed = Color(0xFFC41E3A)
-val NewspaperRedDark = Color(0xFF8B0000)
-val NewspaperRedLight = Color(0xFFE63946)
+import com.taskflow.app.domain.model.AccentColor
 
 val InkBlack = Color(0xFF1A1A1A)
 val InkGray = Color(0xFF4A4A4A)
@@ -22,50 +19,70 @@ val PaperLightGray = Color(0xFFF5F5F5)
 
 val LineSeparator = Color(0xFFE0E0E0)
 
-private val LightColorScheme = lightColorScheme(
-    primary = NewspaperRed,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFEBEE),
-    onPrimaryContainer = InkBlack,
-    secondary = InkGray,
-    onSecondary = Color.White,
-    tertiary = InkLight,
-    background = PaperWhite,
-    onBackground = InkBlack,
-    surface = Color.White,
-    onSurface = InkBlack,
-    surfaceVariant = PaperLightGray,
-    onSurfaceVariant = InkGray,
-    error = NewspaperRed,
-    onError = Color.White,
-    outline = LineSeparator,
-)
+val PriorityHigh = Color(0xFFC41E3A)
+val PriorityMedium = Color(0xFFB8860B)
+val PriorityLow = Color(0xFF4682B4)
 
-private val DarkColorScheme = darkColorScheme(
-    primary = NewspaperRedLight,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFF3D0000),
-    onPrimaryContainer = Color.White,
-    secondary = InkLight,
-    onSecondary = Color.White,
-    tertiary = InkGray,
-    background = InkBlack,
-    onBackground = Color(0xFFF0F0F0),
-    surface = Color(0xFF1E1E1E),
-    onSurface = Color(0xFFF0F0F0),
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurfaceVariant = InkLight,
-    error = NewspaperRedLight,
-    onError = Color.White,
-    outline = Color(0xFF3A3A3A),
-)
+fun getAccentColors(accent: AccentColor): Triple<Color, Color, Color> {
+    return when (accent) {
+        AccentColor.RED -> Triple(Color(0xFFC41E3A), Color(0xFF8B0000), Color(0xFFE63946))
+        AccentColor.INK -> Triple(InkBlack, Color(0xFF000000), InkGray)
+        AccentColor.GOLD -> Triple(Color(0xFFB8860B), Color(0xFF8B6508), Color(0xFFD4A017))
+        AccentColor.BLUE -> Triple(Color(0xFF4682B4), Color(0xFF2F5F8F), Color(0xFF6FA8DC))
+    }
+}
+
+fun getLightColorScheme(accent: AccentColor): androidx.compose.material3.ColorScheme {
+    val (primary, _, _) = getAccentColors(accent)
+    return lightColorScheme(
+        primary = primary,
+        onPrimary = Color.White,
+        primaryContainer = primary.copy(alpha = 0.1f),
+        onPrimaryContainer = InkBlack,
+        secondary = InkGray,
+        onSecondary = Color.White,
+        tertiary = InkLight,
+        background = PaperWhite,
+        onBackground = InkBlack,
+        surface = Color.White,
+        onSurface = InkBlack,
+        surfaceVariant = PaperLightGray,
+        onSurfaceVariant = InkGray,
+        error = Color(0xFFC41E3A),
+        onError = Color.White,
+        outline = LineSeparator,
+    )
+}
+
+fun getDarkColorScheme(accent: AccentColor): androidx.compose.material3.ColorScheme {
+    val (_, _, light) = getAccentColors(accent)
+    return darkColorScheme(
+        primary = light,
+        onPrimary = Color.White,
+        primaryContainer = light.copy(alpha = 0.15f),
+        onPrimaryContainer = Color.White,
+        secondary = InkLight,
+        onSecondary = Color.White,
+        tertiary = InkGray,
+        background = InkBlack,
+        onBackground = Color(0xFFF0F0F0),
+        surface = Color(0xFF1E1E1E),
+        onSurface = Color(0xFFF0F0F0),
+        surfaceVariant = Color(0xFF2A2A2A),
+        onSurfaceVariant = InkLight,
+        error = Color(0xFFE63946),
+        onError = Color.White,
+        outline = Color(0xFF3A3A3A),
+    )
+}
 
 @Composable
 fun TaskFlowTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    accentColor: AccentColor = AccentColor.RED,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) getDarkColorScheme(accentColor) else getLightColorScheme(accentColor)
 
     MaterialTheme(
         colorScheme = colorScheme,

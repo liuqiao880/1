@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,10 +23,13 @@ class PreferencesRepositoryImpl @Inject constructor(
 
     private object Keys {
         val THEME = stringPreferencesKey("theme")
+        val ACCENT_COLOR = stringPreferencesKey("accent_color")
         val EXPANDED_PARENTS = stringPreferencesKey("expanded_parents")
         val AI_API_KEY = stringPreferencesKey("ai_api_key")
         val AI_BASE_URL = stringPreferencesKey("ai_base_url")
         val AI_MODEL = stringPreferencesKey("ai_model")
+        val AI_PROVIDER = stringPreferencesKey("ai_provider")
+        val AI_SYSTEM_PROMPT = stringPreferencesKey("ai_system_prompt")
         val DAILY_REMINDER_ENABLED = booleanPreferencesKey("daily_reminder_enabled")
         val DAILY_REMINDER_HOUR = intPreferencesKey("daily_reminder_hour")
         val DAILY_REMINDER_MINUTE = intPreferencesKey("daily_reminder_minute")
@@ -35,6 +39,12 @@ class PreferencesRepositoryImpl @Inject constructor(
         .map { prefs ->
             val value = prefs[Keys.THEME] ?: ThemeType.SYSTEM.name
             ThemeType.values().firstOrNull { it.name == value } ?: ThemeType.SYSTEM
+        }
+
+    override val accentColor: Flow<AccentColor> = context.dataStore.data
+        .map { prefs ->
+            val value = prefs[Keys.ACCENT_COLOR] ?: AccentColor.RED.name
+            AccentColor.values().firstOrNull { it.name == value } ?: AccentColor.RED
         }
 
     override val expandedParents: Flow<Set<Int>> = context.dataStore.data
@@ -53,6 +63,12 @@ class PreferencesRepositoryImpl @Inject constructor(
     override val aiModel: Flow<String> = context.dataStore.data
         .map { it[Keys.AI_MODEL] ?: "gpt-4o-mini" }
 
+    override val aiProvider: Flow<String> = context.dataStore.data
+        .map { it[Keys.AI_PROVIDER] ?: "openai" }
+
+    override val aiSystemPrompt: Flow<String> = context.dataStore.data
+        .map { it[Keys.AI_SYSTEM_PROMPT] ?: "" }
+
     override val dailyReminderEnabled: Flow<Boolean> = context.dataStore.data
         .map { it[Keys.DAILY_REMINDER_ENABLED] ?: true }
 
@@ -65,6 +81,10 @@ class PreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setTheme(theme: ThemeType) {
         context.dataStore.edit { it[Keys.THEME] = theme.name }
+    }
+
+    override suspend fun setAccentColor(color: AccentColor) {
+        context.dataStore.edit { it[Keys.ACCENT_COLOR] = color.name }
     }
 
     override suspend fun setExpandedParents(ids: Set<Int>) {
@@ -91,6 +111,14 @@ class PreferencesRepositoryImpl @Inject constructor(
 
     override suspend fun setAiModel(model: String) {
         context.dataStore.edit { it[Keys.AI_MODEL] = model }
+    }
+
+    override suspend fun setAiProvider(provider: String) {
+        context.dataStore.edit { it[Keys.AI_PROVIDER] = provider }
+    }
+
+    override suspend fun setAiSystemPrompt(prompt: String) {
+        context.dataStore.edit { it[Keys.AI_SYSTEM_PROMPT] = prompt }
     }
 
     override suspend fun setDailyReminderEnabled(enabled: Boolean) {

@@ -11,6 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
 import com.taskflow.app.ui.navigation.AppNavigation
@@ -29,12 +30,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val theme by preferencesRepository.theme.collectAsState(initial = ThemeType.SYSTEM)
+            val accentColor by preferencesRepository.accentColor.collectAsState(initial = AccentColor.RED)
             val darkTheme = when (theme) {
                 ThemeType.LIGHT -> false
                 ThemeType.DARK -> true
                 ThemeType.SYSTEM -> isSystemInDarkTheme()
             }
-            TaskFlowTheme(darkTheme = darkTheme) {
+            TaskFlowTheme(darkTheme = darkTheme, accentColor = accentColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

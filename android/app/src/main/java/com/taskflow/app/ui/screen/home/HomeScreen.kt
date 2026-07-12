@@ -165,6 +165,9 @@ fun HomeScreen(
         SettingsModal(
             theme = uiState.theme,
             onThemeChange = { viewModel.setTheme(it) },
+            dailyReminderEnabled = uiState.dailyReminderEnabled,
+            onDailyReminderChange = { viewModel.setDailyReminderEnabled(it) },
+            preferencesRepository = viewModel.preferencesRepository,
             onDismiss = { viewModel.setShowSettings(false) }
         )
     }

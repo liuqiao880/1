@@ -38,6 +38,13 @@ enum class ThemeType {
     SYSTEM
 }
 
+enum class AccentColor {
+    RED,
+    INK,
+    GOLD,
+    BLUE
+}
+
 enum class PomodoroPhase {
     FOCUS,
     SHORT_BREAK,

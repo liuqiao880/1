@@ -41,6 +41,7 @@ data class HomeUiState(
     val isSearchActive: Boolean = false,
     val expandedParents: Set<Int> = emptySet(),
     val theme: ThemeType = ThemeType.SYSTEM,
+    val dailyReminderEnabled: Boolean = true,
     val showAiModal: Boolean = false,
     val showEditModal: Boolean = false,
     val editingTask: Task? = null,
@@ -64,7 +65,7 @@ class HomeViewModel @Inject constructor(
     private val searchTasksUseCase: SearchTasksUseCase,
     private val getTaskByIdUseCase: GetTaskByIdUseCase,
     private val incrementPomodoroUseCase: IncrementPomodoroUseCase,
-    private val preferencesRepository: PreferencesRepository
+    val preferencesRepository: PreferencesRepository
 ) : ViewModel() {
 
     private var timerJob: Job? = null
@@ -111,6 +112,17 @@ class HomeViewModel @Inject constructor(
             preferencesRepository.theme.collectLatest { theme ->
                 _uiState.value = _uiState.value.copy(theme = theme)
             }
+        }
+        viewModelScope.launch {
+            preferencesRepository.dailyReminderEnabled.collectLatest { enabled ->
+                _uiState.value = _uiState.value.copy(dailyReminderEnabled = enabled)
+            }
+        }
+    }
+
+    fun setDailyReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesRepository.setDailyReminderEnabled(enabled)
         }
     }
 
