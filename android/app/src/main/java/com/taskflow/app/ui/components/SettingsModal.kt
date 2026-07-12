@@ -38,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.ThemeType
 import com.taskflow.app.domain.repository.PreferencesRepository
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +63,7 @@ fun SettingsModal(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
     var darkMode by remember(theme) { mutableStateOf(theme == ThemeType.DARK) }
     val accentColor by preferencesRepository.accentColor.collectAsState(initial = AccentColor.RED)
     val aiApiKey by preferencesRepository.aiApiKey.collectAsState(initial = "")
@@ -136,10 +139,12 @@ fun SettingsModal(
                     onApiKeyChange = { localApiKey = it },
                     onModelChange = { localModel = it },
                     onSave = {
-                        preferencesRepository.setAiProvider(localProvider)
-                        preferencesRepository.setAiBaseUrl(localBaseUrl)
-                        preferencesRepository.setAiApiKey(localApiKey)
-                        preferencesRepository.setAiModel(localModel)
+                        scope.launch {
+                            preferencesRepository.setAiProvider(localProvider)
+                            preferencesRepository.setAiBaseUrl(localBaseUrl)
+                            preferencesRepository.setAiApiKey(localApiKey)
+                            preferencesRepository.setAiModel(localModel)
+                        }
                         showApiConfig = false
                     },
                     onCancel = {
@@ -182,7 +187,9 @@ fun SettingsModal(
         ColorPickerDialog(
             currentColor = accentColor,
             onSelect = { newColor ->
-                preferencesRepository.setAccentColor(newColor)
+                scope.launch {
+                    preferencesRepository.setAccentColor(newColor)
+                }
                 showColorPickerDialog = false
             },
             onDismiss = { showColorPickerDialog = false }

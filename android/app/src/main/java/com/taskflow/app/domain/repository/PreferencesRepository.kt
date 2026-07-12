@@ -1,5 +1,6 @@
 package com.taskflow.app.domain.repository
 
+import com.taskflow.app.domain.model.AccentColor
 import com.taskflow.app.domain.model.Task
 import com.taskflow.app.domain.model.ThemeType
 import kotlinx.coroutines.flow.Flow

@@ -13,6 +13,8 @@ val InkGray = Color(0xFF4A4A4A)
 val InkLight = Color(0xFF8A8A8A)
 val InkVeryLight = Color(0xFFE8E8E8)
 
+val NewspaperRed = Color(0xFFC41E3A)
+
 val PaperWhite = Color(0xFFFAFAFA)
 val PaperCream = Color(0xFFFDFBF7)
 val PaperLightGray = Color(0xFFF5F5F5)
